@@ -1,26 +1,29 @@
 using System.Collections.Concurrent;
-using Fuwafuwa.Core.Data.Interface;
-using Fuwafuwa.Core.Data.PrimaryInfo.Interface;
-using Fuwafuwa.Core.DataChannel;
+using System.Threading.Channels;
+using Fuwafuwa.Core.Data.RegisterData.Level0;
+using Fuwafuwa.Core.Data.ServiceData.Level0;
+using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Utils;
 
 namespace Fuwafuwa.Core.ServiceRegister;
 
 public class Register {
     public Register() {
-        ServiceTypes = new ConcurrentDictionary<Type, DataChannel<IData, IPrimaryInfo>>();
+        ServiceTypes = new ConcurrentDictionary<(Type, Type), Channel<(IServiceData, ISubjectData, IRegisterData)>>();
     }
 
     public Register(Register other) {
         ServiceTypes =
-            new ConcurrentDictionary<Type, DataChannel<IData, IPrimaryInfo>>(other.ServiceTypes);
+            new ConcurrentDictionary<(Type, Type), Channel<(IServiceData, ISubjectData, IRegisterData)>>(
+                other.ServiceTypes);
     }
 
-    public ConcurrentDictionary<Type, DataChannel<IData, IPrimaryInfo>> ServiceTypes { get; }
+    public ConcurrentDictionary<(Type attributeType, Type serviceType),
+        Channel<(IServiceData, ISubjectData, IRegisterData)>> ServiceTypes { get; }
 
-    public List<DataChannel<IData, IPrimaryInfo>> GetTypeChannel(Type type) {
+    public List<Channel<(IServiceData, ISubjectData, IRegisterData)>> GetTypeChannel(Type type) {
         return ServiceTypes
-            .Where(kvp => Util.Is(kvp.Key, type))
+            .Where(kvp => Util.Is(kvp.Key.attributeType, type))
             .Select(kvp => kvp.Value)
             .ToList();
     }
