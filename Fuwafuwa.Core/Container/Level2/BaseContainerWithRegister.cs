@@ -6,6 +6,7 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
 using Fuwafuwa.Core.ServiceRegister;
 
@@ -18,7 +19,7 @@ public abstract class
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
     where TSharedData : new() {
-    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter) : base(serviceCount, setter) { }
+    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter,Logger2Event? logger) : base(serviceCount, setter, logger) { }
 
     protected override Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
         IRegisterData registerData) {
@@ -26,6 +27,7 @@ public abstract class
 
         switch (registerData) {
             case AddRegisterData addRegisterData:
+                Logger?.Debug(this, "Add register data");
                 register.ServiceTypes.TryAdd(
                     addRegisterData.ServiceType,
                     addRegisterData.Channel
@@ -33,6 +35,7 @@ public abstract class
                 addRegisterData.RegisterConfirmDelegate(ServiceAttributeType, addRegisterData.ServiceType);
                 break;
             case InitRegisterData initRegisterData:
+                Logger?.Debug(this, "Init register data");
                 register.ServiceTypes.Clear();
                 foreach (var (key, value) in initRegisterData.InitRegister.ServiceTypes) {
                     register.ServiceTypes.TryAdd(key, value);
@@ -41,6 +44,7 @@ public abstract class
                 initRegisterData.InitConfirmDelegate(ServiceAttributeType);
                 break;
             case RemoveRegisterData removeRegisterData:
+                Logger?.Debug(this, "Remove register data");
                 register.ServiceTypes.TryRemove(
                     removeRegisterData.ServiceType,
                     out _
@@ -48,10 +52,12 @@ public abstract class
                 removeRegisterData.UnregisterConfirmDelegate(ServiceAttributeType, removeRegisterData.ServiceType);
                 break;
             default:
+                Logger?.Error(this, "Strange RegisterData type");
                 throw new Exception("strange RegisterData type");
         }
 
         if (serviceData is not NullServiceData || subjectData is not NullSubjectData) {
+            Logger?.Error(this, "Strange ServiceData/SubjectData type");
             throw new Exception("strange ServiceData/SubjectData type");
         }
 

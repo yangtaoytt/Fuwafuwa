@@ -3,6 +3,7 @@ using Fuwafuwa.Core.Container.Level0;
 using Fuwafuwa.Core.Data.RegisterData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level0;
 using Fuwafuwa.Core.ServiceRegister;
 
@@ -15,6 +16,6 @@ public abstract class
     where TServiceData : IServiceData
     where TSharedData : new()
     where TSubjectData : ISubjectData {
-    public APublicChannelContainer(int serviceCount, DelSetDistribute setter) : base(serviceCount, setter) { }
+    protected APublicChannelContainer(int serviceCount, DelSetDistribute setter,Logger2Event? logger) : base(serviceCount, setter, logger) { }
     public Channel<(IServiceData, ISubjectData, IRegisterData)> MainChannel => InternalMainChannel;
 }

@@ -4,6 +4,7 @@ using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
 using Fuwafuwa.Core.ServiceRegister;
 
@@ -11,7 +12,7 @@ namespace Fuwafuwa.Core.Service.Level2;
 
 public class TaskAgentService : AServiceWithRegister<TaskAgentData, NullSubjectData, object> {
     protected override async Task ProcessData(TaskAgentData serviceData, NullSubjectData subjectData, Register register,
-        object sharedData) {
+        object sharedData, Logger2Event? logger) {
         var taskSet = serviceData.ExecuteTaskSet;
         var tasks = taskSet.GetTasks();
 

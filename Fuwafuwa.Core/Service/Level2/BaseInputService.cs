@@ -7,6 +7,7 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
 using Fuwafuwa.Core.ServiceRegister;
 using Fuwafuwa.Core.Subjects;
@@ -17,7 +18,7 @@ namespace Fuwafuwa.Core.Service.Level2;
 public abstract class
     BaseInputService<TSharedData> : AServiceWithRegister<InputPackagedData, NullSubjectData, TSharedData>
     where TSharedData : new() {
-    protected abstract Task<List<Certificate>> ProcessData(InputPackagedData data, TSharedData sharedData);
+    protected abstract Task<List<Certificate>> ProcessData(InputPackagedData data, TSharedData sharedData, Logger2Event? logger);
 
     private async Task HandleResult(List<Certificate> certificates, Register register) {
         var processorData = new Dictionary<Type, IServiceData>();
@@ -61,8 +62,8 @@ public abstract class
     }
 
     protected override async Task ProcessData(InputPackagedData serviceData, NullSubjectData subjectData,
-        Register register, TSharedData sharedData) {
-        await HandleResult(await ProcessData(serviceData, sharedData), register);
+        Register register, TSharedData sharedData , Logger2Event? logger) {
+        await HandleResult(await ProcessData(serviceData, sharedData, logger), register);
     }
 
     public override IServiceAttribute<InputPackagedData> GetServiceAttribute() {

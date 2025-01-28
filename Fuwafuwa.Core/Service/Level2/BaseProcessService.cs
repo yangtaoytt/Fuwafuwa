@@ -7,6 +7,7 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
 using Fuwafuwa.Core.ServiceRegister;
 using Fuwafuwa.Core.Utils;
@@ -18,8 +19,8 @@ public abstract class
     TSharedData> where TServiceData : IProcessorData where TSharedData : new() {
     protected override async Task ProcessData(TServiceData serviceData, SubjectDataWithCommand subjectData,
         Register register,
-        TSharedData sharedData) {
-        await HandleDataAndTask(await ProcessData(serviceData, sharedData), subjectData, register);
+        TSharedData sharedData , Logger2Event? logger) {
+        await HandleDataAndTask(await ProcessData(serviceData, sharedData, logger), subjectData, register);
     }
 
     private async Task HandleDataAndTask(List<Certificate> certificates,
@@ -64,5 +65,5 @@ public abstract class
         }
     }
 
-    protected abstract Task<List<Certificate>> ProcessData(TServiceData data, TSharedData sharedData);
+    protected abstract Task<List<Certificate>> ProcessData(TServiceData data, TSharedData sharedData, Logger2Event? logger);
 }
