@@ -7,6 +7,6 @@ namespace Fuwafuwa.Core.ServiceCore.Level3;
 
 public interface IProcessorCore<TServiceData, TSharedData, TInitData>
     : IFinalAbleServiceCore<TServiceData, TSharedData, TInitData>
-    where TServiceData : IProcessorData where TSharedData : new() {
+    where TServiceData : IProcessorData {
     public Task<List<Certificate>> ProcessData(TServiceData data, TSharedData sharedData,Lock sharedDataLock, Logger2Event? logger);
 }

@@ -3,7 +3,7 @@ using Fuwafuwa.Core.ServiceCore.Level0;
 
 namespace Fuwafuwa.Core.ServiceCore.Level1;
 
-public interface IInitAbleServiceCore<TServiceData, TSharedData, TInitData> : IServiceCore<TServiceData>
+public interface IInitAbleServiceCore<TServiceData, out TSharedData, in TInitData> : IServiceCore<TServiceData>
     where TServiceData : IServiceData {
     public static abstract TSharedData Init(TInitData initData);
 }

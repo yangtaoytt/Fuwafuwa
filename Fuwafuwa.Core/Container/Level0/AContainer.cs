@@ -31,7 +31,7 @@ public abstract class
     
     protected readonly TSharedData SharedData;
     
-    protected Lock SharedDataLock;
+    protected readonly Lock SharedDataLock;
 
     protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Lock sharedDataLock, Logger2Event? logger = null) {
         logger?.Info(this, "Init container");

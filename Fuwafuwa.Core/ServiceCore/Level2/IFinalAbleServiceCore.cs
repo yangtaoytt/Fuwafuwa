@@ -5,7 +5,7 @@ using Fuwafuwa.Core.ServiceCore.Level1;
 namespace Fuwafuwa.Core.ServiceCore.Level2;
 
 public interface
-    IFinalAbleServiceCore<TServiceData, TSharedData, TInitData> : IInitAbleServiceCore<TServiceData, TSharedData,
+    IFinalAbleServiceCore<TServiceData, TSharedData, in TInitData> : IInitAbleServiceCore<TServiceData, TSharedData,
     TInitData> where TServiceData : IServiceData {
     public static abstract void Final(TSharedData sharedData, Logger2Event? logger);
 }
