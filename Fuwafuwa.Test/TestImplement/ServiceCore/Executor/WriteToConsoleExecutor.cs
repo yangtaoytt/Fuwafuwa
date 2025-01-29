@@ -15,7 +15,7 @@ public class WriteToConsoleExecutor : IExecutorCore<WriteToConsoleData, object, 
         return new object();
     }
 
-    public Task ExecuteTask(WriteToConsoleData data, object sharedData, Logger2Event? logger) {
+    public Task ExecuteTask(WriteToConsoleData data, object sharedData,Lock sharedDataLock, Logger2Event? logger) {
         Console.WriteLine(data.Message);
         return Task.CompletedTask;
     }

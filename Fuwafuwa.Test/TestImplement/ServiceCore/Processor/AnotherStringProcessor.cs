@@ -17,7 +17,7 @@ public class AnotherStringProcessor : IProcessorCore<StringData, object, object>
         return new object();
     }
 
-    public Task<List<Certificate>> ProcessData(StringData data, object sharedData, Logger2Event? logger) {
+    public Task<List<Certificate>> ProcessData(StringData data, object sharedData,Lock sharedDataLock, Logger2Event? logger) {
         logger?.Debug(this, data.Data + " Into AnotherStringProcessor");
         return Task.FromResult(
             new List<Certificate> {

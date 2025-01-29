@@ -10,6 +10,6 @@ namespace Fuwafuwa.Core.Container.Level3;
 
 public class TaskAgentContainer : BaseContainerWithRegister<TaskAgentCore, TaskAgentService, TaskAgentData,
     NullSubjectData, object, object> {
-    public TaskAgentContainer(int serviceCount, DelSetDistribute setter, (Register, object) initData,
-        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
+    public TaskAgentContainer(int serviceCount, DelSetDistribute setter, (Register, object) initData, Lock sharedDataLock,
+        Logger2Event? logger = null) : base(serviceCount, setter, initData,sharedDataLock, logger) { }
 }

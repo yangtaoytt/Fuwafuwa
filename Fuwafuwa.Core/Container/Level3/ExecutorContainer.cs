@@ -14,6 +14,6 @@ public class
     where TSharedData : new()
     where TServiceData : IServiceData
     where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new() {
-    public ExecutorContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger) :
-        base(serviceCount, setter, initData, logger) { }
+    public ExecutorContainer(int serviceCount, DelSetDistribute setter, TInitData initData,
+        Lock sharedDataLock, Logger2Event? logger = null) : base(serviceCount, setter, initData, sharedDataLock, logger) { }
 }

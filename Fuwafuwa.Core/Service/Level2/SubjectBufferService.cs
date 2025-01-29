@@ -19,7 +19,7 @@ public class
     private readonly Dictionary<Subject, ISubjectTaskCollector> _taskCollectors = new();
 
     protected override async Task ProcessData(NullServiceData serviceData, SubjectData subjectData, Register register,
-        object sharedData) {
+        object sharedData, Lock sharedDataLock) {
         Logger?.Debug(this, "ProcessSubjectBufferData");
         var subject = subjectData.Subject;
         if (!_taskCollectors.TryGetValue(subject, out var collector)) {

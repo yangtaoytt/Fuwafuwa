@@ -14,11 +14,11 @@ public abstract class
     where TSharedData : new()
     where TServiceCore : IServiceCore<TServiceData>, new() {
     protected override Task ProcessData(TServiceData serviceData, TSubjectData subjectData,
-        InitTuple<TSharedData> initTuple) {
-        return ProcessData(serviceData, subjectData, initTuple.Item1);
+        InitTuple<TSharedData> initTuple, Lock sharedDataLock) {
+        return ProcessData(serviceData, subjectData, initTuple.Item1, sharedDataLock);
     }
 
-    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData);
+    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData,Lock sharedDataLock);
 
     protected override InitTuple<TSharedData> Init(TInitData initData) {
         return new InitTuple<TSharedData>(SubInit(initData));

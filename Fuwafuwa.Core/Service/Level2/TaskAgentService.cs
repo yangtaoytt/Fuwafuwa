@@ -12,7 +12,7 @@ namespace Fuwafuwa.Core.Service.Level2;
 
 public class TaskAgentService : AServiceWithRegister<TaskAgentCore, TaskAgentData, NullSubjectData, object, object> {
     protected override async Task ProcessData(TaskAgentData serviceData, NullSubjectData subjectData, Register register,
-        object sharedData) {
+        object sharedData, Lock sharedDataLock) {
         Logger?.Debug(this, "ProcessTaskAgentData");
         var taskSet = serviceData.ExecuteTaskSet;
         var tasks = taskSet.GetTasks();

@@ -15,6 +15,6 @@ public class
     where TServiceData : IProcessorData
     where TSharedData : new()
     where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new() {
-    public ProcessorContainer(int serviceCount, DelSetDistribute setter, (Register, TInitData) initData,
-        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
+    public ProcessorContainer(int serviceCount, DelSetDistribute setter, (Register, TInitData) initData, Lock sharedDataLock,
+        Logger2Event? logger = null) : base(serviceCount, setter, initData, sharedDataLock, logger) { }
 }

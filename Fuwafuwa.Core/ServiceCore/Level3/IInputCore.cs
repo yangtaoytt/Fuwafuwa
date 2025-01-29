@@ -8,5 +8,5 @@ namespace Fuwafuwa.Core.ServiceCore.Level3;
 public interface IInputCore<TSharedData, TInitData>
     : IFinalAbleServiceCore<InputPackagedData, TSharedData, TInitData>
     where TSharedData : new() {
-    public Task<List<Certificate>> ProcessData(InputPackagedData data, TSharedData sharedData, Logger2Event? logger);
+    public Task<List<Certificate>> ProcessData(InputPackagedData data, TSharedData sharedData,Lock sharedDataLock, Logger2Event? logger);
 }

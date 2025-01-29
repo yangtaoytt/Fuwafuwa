@@ -28,15 +28,17 @@ public abstract class
     private readonly List<TService> _services;
 
     protected readonly Logger2Event? Logger;
-
-
+    
     protected readonly TSharedData SharedData;
+    
+    protected Lock SharedDataLock;
 
-    protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger) {
+    protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Lock sharedDataLock, Logger2Event? logger = null) {
         logger?.Info(this, "Init container");
 
         _serviceCount = serviceCount;
         Logger = logger;
+        SharedDataLock = sharedDataLock;
         _services = [];
         InternalMainChannel = Channel.CreateUnbounded<(IServiceData, ISubjectData, IRegisterData)>();
         Distributor = setter();
@@ -92,9 +94,9 @@ public abstract class
     public (Type attributeType, Type serviceType) ServiceAttributeType { get; init; }
 
 
-    private ChannelWriter<(TServiceData, TSubjectData, TSharedData)> DistributeData(TServiceData serviceData,
-        TSubjectData subjectData, TSharedData sharedData) {
-        return _services[Distributor.Distribute(_serviceCount, serviceData, subjectData, sharedData)].Writer;
+    private ChannelWriter<(TServiceData, TSubjectData, TSharedData, Lock)> DistributeData(TServiceData serviceData,
+        TSubjectData subjectData, TSharedData sharedData, Lock sharedDataLock) {
+        return _services[Distributor.Distribute(_serviceCount, serviceData, subjectData, sharedData,sharedDataLock)].Writer;
     }
 
     protected abstract Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
@@ -102,6 +104,6 @@ public abstract class
 
     private async Task HandleServiceData(TServiceData serviceData, TSubjectData subjectData) {
         Logger?.Debug(this, "Handle service data");
-        await DistributeData(serviceData, subjectData, SharedData).WriteAsync((serviceData, subjectData, SharedData));
+        await DistributeData(serviceData, subjectData, SharedData, SharedDataLock).WriteAsync((serviceData, subjectData, SharedData,SharedDataLock));
     }
 }

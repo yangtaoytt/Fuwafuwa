@@ -31,11 +31,11 @@ public class Env {
 
         var subjectBufferContainer = new SubjectBufferContainer(concurrencyLevel,
             () => new HashDistributor<NullServiceData, SubjectData, InitTuple<Register, object>>(),
-            (new Register(), new object()), _logger);
+            (new Register(), new object()),new Lock(), _logger);
 
         var taskAgentContainer = new TaskAgentContainer(ConcurrencyLevel,
             () => new PollingDistributor<TaskAgentData, NullSubjectData, InitTuple<Register, object>>(),
-            (new Register(), new object()), _logger);
+            (new Register(), new object()),new Lock(), _logger);
 
         _defaultServiceTask = [
             RunTask(subjectBufferContainer),
@@ -121,21 +121,21 @@ public class Env {
 
 
     public async Task<(Type, InputHandler<TInputData>)> CreateRunRegisterPollingInput<TInputCore, TInputData,
-        TSharedData, TInitData>()
+        TSharedData, TInitData>(Lock sharedDataLock)
         where TInputCore : IInputCore<TSharedData, TInitData>, new() where TSharedData : new() where TInitData : new() {
         var inputHandler = new InputHandler<TInputData>();
 
         var inputContainer = new InputContainer<TInputCore, TInputData, TSharedData, TInitData>(
             ConcurrencyLevel,
             () => new PollingDistributor<InputPackagedData, NullSubjectData, InitTuple<Register, TSharedData>>(),
-            inputHandler, (new Register(), new TInitData()), _logger);
+            inputHandler, (new Register(), new TInitData()),sharedDataLock, _logger);
         var serviceType = await RunRegister(inputContainer);
 
         return (serviceType, inputHandler);
     }
 
 
-    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>()
+    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(Lock sharedDataLock)
         where TServiceData : IProcessorData
         where TSharedData : new()
         where TInitData : new()
@@ -143,20 +143,20 @@ public class Env {
         var processorContainer = new ProcessorContainer<TProcessorCore, TServiceData, TSharedData, TInitData>(
             ConcurrencyLevel,
             () => new PollingDistributor<TServiceData, SubjectDataWithCommand, InitTuple<Register, TSharedData>>(),
-            (new Register(), new TInitData()), _logger);
+            (new Register(), new TInitData()),sharedDataLock, _logger);
         var serviceType = await RunRegister(processorContainer);
 
         return serviceType;
     }
 
-    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>()
+    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(Lock sharedDataLock)
         where TServiceData : AExecutorData
         where TSharedData : new()
         where TInitData : new()
         where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new() {
         var executorContainer = new ExecutorContainer<TExecutorCore, TServiceData, TSharedData, TInitData>(
             ConcurrencyLevel,
-            () => new PollingDistributor<TServiceData, NullSubjectData, InitTuple<TSharedData>>(), new TInitData(),
+            () => new PollingDistributor<TServiceData, NullSubjectData, InitTuple<TSharedData>>(), new TInitData(),sharedDataLock,
             _logger);
         var serviceType = await RunRegister(executorContainer);
         return serviceType;

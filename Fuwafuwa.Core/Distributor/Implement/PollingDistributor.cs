@@ -9,8 +9,8 @@ public class
     where TSubjectData : ISubjectData where TServiceData : IServiceData {
     private int _nextProcessorIndex;
 
-    public int Distribute(int processorCount, TServiceData serviceData, TSubjectData subjectData,
-        TSharedData sharedData) {
+    public int Distribute(int processorCount, TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData,
+        Lock sharedDataLock) {
         ++_nextProcessorIndex;
         if (_nextProcessorIndex >= processorCount) {
             _nextProcessorIndex = 0;

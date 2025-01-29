@@ -41,11 +41,11 @@ public class EnvTest {
 
     [Test]
     public async Task TestOneProcessor() {
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
-        var processorType = await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+        var processorType = await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         for (var i = 0; i < 5; i++) {
             await inputHandler.Input($"Hello World!:[{i}]");
@@ -58,14 +58,14 @@ public class EnvTest {
 
     [Test]
     public async Task TestTwoProcessor() {
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
         var processor1Type =
-            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var processor2Type =
-            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         for (var i = 0; i < 5; i++) {
             await inputHandler.Input($"Hello World!:[{i}]");
@@ -78,14 +78,14 @@ public class EnvTest {
 
     [Test]
     public async Task TestTwoProcessorQuick() {
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
         var processor1Type =
-            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var processor2Type =
-            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         for (var i = 0; i < 5; i++) {
             await inputHandler.Input($"Hello World!:[{i}]");
@@ -96,14 +96,14 @@ public class EnvTest {
 
     [Test]
     public async Task TestServiceUnregister() {
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
         var processor1Type =
-            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var processor2Type =
-            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         await inputHandler.Input("Hello World!:[0]");
 
@@ -120,14 +120,14 @@ public class EnvTest {
 
     [Test]
     public async Task TestServiceUnregisterAll() {
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
         var processor1Type =
-            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var processor2Type =
-            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>();
+            await _env.CreateRunRegisterPollingProcessor<AnotherStringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         await inputHandler.Input("Hello World!:[0]");
 
@@ -149,11 +149,11 @@ public class EnvTest {
     public async Task TestDeadLock() {
         await TestContext.Progress.WriteLineAsync("Start");
 
-        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>();
+        var (inputType, inputHandler) = await _env.CreateRunRegisterPollingInput<StringInput, string, object, object>(new Lock());
 
-        var processorType = await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>();
+        var processorType = await _env.CreateRunRegisterPollingProcessor<StringProcessor, StringData, object, object>(new Lock());
         var executorType =
-            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>();
+            await _env.CreateRunRegisterPollingExecutor<WriteToConsoleExecutor, WriteToConsoleData, object, object>(new Lock());
 
         for (var i = 0; i < 5; i++) {
             await inputHandler.Input($"Hello World!:[{i}]");

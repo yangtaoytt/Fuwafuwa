@@ -8,5 +8,5 @@ public interface
     IExecutorCore<TServiceData, TSharedData, TInitData> : IFinalAbleServiceCore<TServiceData, TSharedData, TInitData>
     where TSharedData : new()
     where TServiceData : IServiceData {
-    public Task ExecuteTask(TServiceData data, TSharedData sharedData, Logger2Event? logger);
+    public Task ExecuteTask(TServiceData data, TSharedData sharedData,Lock sharedDataLock, Logger2Event? logger);
 }

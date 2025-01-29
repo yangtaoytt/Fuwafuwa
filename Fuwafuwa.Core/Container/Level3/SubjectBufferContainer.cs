@@ -11,6 +11,6 @@ namespace Fuwafuwa.Core.Container.Level3;
 public class
     SubjectBufferContainer : BaseContainerWithRegister<SubjectBufferCore, SubjectBufferService, NullServiceData,
     SubjectData, object, object> {
-    public SubjectBufferContainer(int serviceCount, DelSetDistribute setter, (Register, object) initData,
-        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
+    public SubjectBufferContainer(int serviceCount, DelSetDistribute setter, (Register, object) initData, Lock sharedDataLock,
+        Logger2Event? logger = null) : base(serviceCount, setter, initData, sharedDataLock, logger) { }
 }

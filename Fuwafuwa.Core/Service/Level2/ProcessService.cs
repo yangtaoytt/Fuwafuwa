@@ -24,8 +24,8 @@ public class
     where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new() {
     protected override async Task ProcessData(TServiceData serviceData, SubjectDataWithCommand subjectData,
         Register register,
-        TSharedData sharedData) {
-        await HandleDataAndTask(await ServiceCore.ProcessData(serviceData, sharedData, Logger), subjectData, register);
+        TSharedData sharedData, Lock sharedDataLock) {
+        await HandleDataAndTask(await ServiceCore.ProcessData(serviceData, sharedData,sharedDataLock, Logger), subjectData, register);
     }
 
     protected override TSharedData SubInit(TInitData initData) {

@@ -66,8 +66,8 @@ public class
     }
 
     protected override async Task ProcessData(InputPackagedData serviceData, NullSubjectData subjectData,
-        Register register, TSharedData sharedData) {
-        await HandleResult(await ServiceCore.ProcessData(serviceData, sharedData, Logger), register);
+        Register register, TSharedData sharedData, Lock sharedDataLock) {
+        await HandleResult(await ServiceCore.ProcessData(serviceData, sharedData,sharedDataLock, Logger), register);
     }
 
     protected override TSharedData SubInit(TInitData initData) {

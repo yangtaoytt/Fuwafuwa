@@ -24,4 +24,8 @@
         <ProjectReference Include="..\Fuwafuwa.Core\Fuwafuwa.Core.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="TestImplement\ServiceCore\" />
+    </ItemGroup>
+
 </Project>

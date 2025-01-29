@@ -13,8 +13,8 @@ public class
     where TSharedData : new()
     where TServiceData : IServiceData
     where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new() {
-    protected override Task ProcessData(TServiceData serviceData, NullSubjectData subjectData, TSharedData sharedData) {
-        return ServiceCore.ExecuteTask(serviceData, sharedData, Logger);
+    protected override Task ProcessData(TServiceData serviceData, NullSubjectData subjectData, TSharedData sharedData, Lock sharedDataLock) {
+        return ServiceCore.ExecuteTask(serviceData, sharedData,sharedDataLock, Logger);
     }
 
     protected override TSharedData SubInit(TInitData initData) {

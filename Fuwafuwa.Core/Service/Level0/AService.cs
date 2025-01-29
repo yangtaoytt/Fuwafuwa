@@ -11,18 +11,18 @@ public abstract class AService<TServiceCore, TServiceData, TSubjectData, TShared
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
     where TServiceCore : IServiceCore<TServiceData>, new() {
-    private readonly Channel<(TServiceData, TSubjectData, TSharedData)> _channel;
+    private readonly Channel<(TServiceData, TSubjectData, TSharedData,Lock)> _channel;
 
     protected readonly TServiceCore ServiceCore;
 
     protected Logger2Event? Logger;
 
     protected AService() {
-        _channel = Channel.CreateUnbounded<(TServiceData, TSubjectData, TSharedData)>();
+        _channel = Channel.CreateUnbounded<(TServiceData, TSubjectData, TSharedData,Lock)>();
         ServiceCore = new TServiceCore();
     }
 
-    public ChannelWriter<(TServiceData, TSubjectData, TSharedData)> Writer => _channel.Writer;
+    public ChannelWriter<(TServiceData, TSubjectData, TSharedData, Lock)> Writer => _channel.Writer;
 
     public async Task Run(CancellationToken cancellationToken) {
         Logger?.Info(this, "Run service");
@@ -32,7 +32,7 @@ public abstract class AService<TServiceCore, TServiceData, TSubjectData, TShared
                 await foreach (var dataObject in _channel.Reader.ReadAllAsync(cancellationToken)) {
                     Logger?.Debug(this, "Process data");
 
-                    await ProcessData(dataObject.Item1, dataObject.Item2, dataObject.Item3);
+                    await ProcessData(dataObject.Item1, dataObject.Item2, dataObject.Item3, dataObject.Item4);
                 }
             } catch (OperationCanceledException) {
                 Logger?.Debug(this, "Service cancelled");
@@ -43,7 +43,7 @@ public abstract class AService<TServiceCore, TServiceData, TSubjectData, TShared
         }
     }
 
-    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData);
+    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData, Lock sharedDataLock);
 
     public IServiceAttribute<TServiceData> GetServiceAttribute() {
         return TServiceCore.GetServiceAttribute();

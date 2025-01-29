@@ -22,8 +22,8 @@ public abstract class
     where TSubjectData : ISubjectData
     where TSharedData : new()
     where TServiceCore : IServiceCore<TServiceData>, new() {
-    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter, (Register, TInitData) initData,
-        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
+    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter, (Register, TInitData) initData, Lock sharedDataLock,
+        Logger2Event? logger = null) : base(serviceCount, setter, initData, sharedDataLock, logger) { }
 
     protected override Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
         IRegisterData registerData) {

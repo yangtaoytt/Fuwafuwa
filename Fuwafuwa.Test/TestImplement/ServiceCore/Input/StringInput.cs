@@ -9,7 +9,7 @@ using Fuwafuwa.Test.TestImplement.Data;
 namespace Fuwafuwa.Test.TestImplement.Input;
 
 public class StringInput : IInputCore<object, object> {
-    public Task<List<Certificate>> ProcessData(InputPackagedData data, object sharedData, Logger2Event? logger) {
+    public Task<List<Certificate>> ProcessData(InputPackagedData data, object sharedData,Lock sharedDataLock, Logger2Event? logger) {
         var inputMessage = (string)data.PackagedObject!;
 
         var stringData = new StringData(inputMessage);

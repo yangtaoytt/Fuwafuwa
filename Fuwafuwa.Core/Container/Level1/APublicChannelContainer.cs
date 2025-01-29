@@ -20,8 +20,8 @@ public abstract class
     where TSharedData : new()
     where TSubjectData : ISubjectData
     where TServiceCore : IServiceCore<TServiceData>, new() {
-    protected APublicChannelContainer(int serviceCount, DelSetDistribute setter, TInitData initData,
-        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
-
+    protected APublicChannelContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Lock sharedDataLock,
+        Logger2Event? logger = null) : base(serviceCount, setter, initData, sharedDataLock, logger) { }
+    
     public Channel<(IServiceData, ISubjectData, IRegisterData)> MainChannel => InternalMainChannel;
 }
