@@ -23,6 +23,8 @@ public class ServiceRegisterGroup {
     public delegate void RegisterUpdateConfirmDelegate((Type attributeType, Type serviceType) receiveServiceType,
         (Type attributeType, Type serviceType) updateServiceType);
 
+    private readonly Logger2Event? _logger;
+
     private readonly Register _originalRegister;
 
     private readonly object _registerLock;
@@ -37,8 +39,7 @@ public class ServiceRegisterGroup {
         ConcurrentDictionary<(Type attributeType, Type serviceType), (
             ConcurrentDictionary<(Type attributeType, Type serviceType), object?> otherServiceList, TaskCompletionSource
             completionSource)> _service2Unregister;
-    
-    private Logger2Event? _logger;
+
     public ServiceRegisterGroup(Logger2Event? logger) {
         _logger = logger;
         _originalRegister = new Register();
@@ -53,6 +54,8 @@ public class ServiceRegisterGroup {
     }
 
     private void InitConfirm((Type attributeType, Type serviceType) initServiceType) {
+        _logger?.Debug(this, $"InitConfirm {initServiceType.serviceType.Name}");
+
         if (!_service2Init.TryGetValue(initServiceType, out var taskSource)) {
             throw new Exception("Service is not init-ing");
         }
@@ -68,6 +71,8 @@ public class ServiceRegisterGroup {
 
     public void AddConfirm((Type attributeType, Type serviceType) receiverServiceType,
         (Type attributeType, Type serviceType) addServiceType) {
+        _logger?.Debug(this, $"AddConfirm {addServiceType.serviceType.Name}");
+
         lock (_registerLock) {
             if (!_service2Register.TryGetValue(addServiceType, out var value)) {
                 throw new Exception("Service is not registering");
@@ -89,6 +94,7 @@ public class ServiceRegisterGroup {
 
     private void UnregisterConfirm((Type attributeType, Type serviceType) receiverServiceType,
         (Type attributeType, Type serviceType) removeServiceType) {
+        _logger?.Debug(this, $"UnregisterConfirm {removeServiceType.serviceType.Name}");
         lock (_registerLock) {
             if (!_service2Unregister.TryGetValue(removeServiceType, out var value)) {
                 throw new Exception("Service is not unregistering");
@@ -111,6 +117,8 @@ public class ServiceRegisterGroup {
 
     private void WaitInitComplete((Type attributeType, Type serviceType) serviceType,
         Channel<(IServiceData, ISubjectData, IRegisterData)> channel, Register register) {
+        _logger?.Debug(this, $"WaitInitComplete {serviceType.serviceType.Name}");
+
         if (_service2Init.ContainsKey(serviceType)) {
             throw new Exception("Service is already init-ing");
         }
@@ -129,24 +137,22 @@ public class ServiceRegisterGroup {
 
 
     public async Task RegisterAndBroadcast(IRegistrableContainer container) {
+        _logger?.Info(this, $"RegisterAndBroadcast {container.ServiceAttributeType.serviceType.Name}");
         Task task;
         var registerChannel = container.MainChannel;
         var registerType = container.ServiceAttributeType;
         lock (_registerLock) {
             if (_originalRegister.ServiceTypes.ContainsKey(registerType)) {
-                _logger?.Error(this, "Service already registered");
                 throw new Exception("Service already registered");
             }
 
             _originalRegister.ServiceTypes.TryAdd(registerType, registerChannel);
-            _logger?.Debug(this, $"After Add {registerType.serviceType.Name} to original register");
             WaitInitComplete(registerType, registerChannel, _originalRegister);
-            _logger?.Debug(this, $"After send init to and receive confirm msg from {registerType.serviceType.Name}");
             if (_originalRegister.ServiceTypes.Count == 1) {
                 _logger?.Debug(this, $"{registerType.serviceType.Name} is the first service");
                 return;
             }
-            
+
             var dic = new ConcurrentDictionary<(Type attributeType, Type serviceType), object?>();
             foreach (var (serviceType, dataChannel) in _originalRegister.ServiceTypes) {
                 if (serviceType == registerType) {
@@ -166,7 +172,7 @@ public class ServiceRegisterGroup {
                 if (serviceType == registerType) {
                     continue;
                 }
-                
+
                 if (CheckReceiveLegal(serviceType)) {
                     _logger?.Debug(this, $"Send add msg to {serviceType.serviceType.Name}");
                     dataChannel.Writer.TryWrite((
@@ -177,6 +183,7 @@ public class ServiceRegisterGroup {
                 }
             }
         }
+
         _logger?.Debug(this, $"Before wait for {registerType.serviceType.Name} complete register");
         await task;
         _logger?.Debug(this, $"After wait for {registerType.serviceType.Name} complete register");
@@ -184,12 +191,12 @@ public class ServiceRegisterGroup {
 
 
     public async Task UnregisterAndBroadcast(IRegistrableContainer container) {
+        _logger?.Info(this, $"UnregisterAndBroadcast {container.ServiceAttributeType.serviceType.Name}");
         Task task;
         var unRegisterType = container.ServiceAttributeType;
         var registerChannel = container.MainChannel;
         lock (_registerLock) {
             if (!_originalRegister.ServiceTypes.ContainsKey(unRegisterType)) {
-                _logger?.Error(this, "Service not registered");
                 throw new Exception("Service not registered");
             }
 
@@ -221,19 +228,21 @@ public class ServiceRegisterGroup {
                 }
             }
         }
+
         _logger?.Debug(this, $"Before wait for {unRegisterType.serviceType.Name}");
         await task;
         _logger?.Debug(this, $"After wait for {unRegisterType.serviceType.Name}");
         WaitInitComplete(unRegisterType, registerChannel, new Register());
-        _logger?.Debug(this, $"After send init to and receive confirm msg from {unRegisterType.serviceType.Name}");
         foreach (var (registerType, (list, completionSource)) in _service2Register) {
             if (list.Keys.Contains(unRegisterType)) {
+                _logger?.Debug(this, $"Manually send add msg to {registerType.serviceType.Name}");
                 AddConfirm(unRegisterType, registerType);
             }
         }
 
         foreach (var (registerType, (list, completionSource)) in _service2Unregister) {
             if (list.Keys.Contains(unRegisterType)) {
+                _logger?.Debug(this, $"Manually send remove msg to {registerType.serviceType.Name}");
                 UnregisterConfirm(unRegisterType, registerType);
             }
         }

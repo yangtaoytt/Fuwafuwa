@@ -3,4 +3,4 @@ using Fuwafuwa.Test.TestImplement.Data;
 
 namespace Fuwafuwa.Test.TestImplement.Attribute.Executor;
 
-public class IWriteToConsole : IExecutorAttribute<IWriteToConsole, WriteToConsoleData> { }
+public class IWriteToConsole : IExecutorAttribute<IWriteToConsole, WriteToConsoleData>;

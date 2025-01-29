@@ -1,21 +1,31 @@
 using Fuwafuwa.Core.Data.InitTuple;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
-using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level0;
+using Fuwafuwa.Core.ServiceCore.Level0;
 using Fuwafuwa.Core.ServiceRegister;
 
 namespace Fuwafuwa.Core.Service.Level1;
 
 public abstract class
-    AServiceWithRegister<TServiceData, TSubjectData, TSharedData> : AService<TServiceData, TSubjectData, InitTuple<
-    Register,
-    TSharedData>> where TServiceData : IServiceData where TSubjectData : ISubjectData where TSharedData : new() {
+    AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData> : AService<TServiceCore,
+    TServiceData, TSubjectData, InitTuple<
+        Register,
+        TSharedData>, (Register, TInitData)> where TServiceData : IServiceData
+    where TSubjectData : ISubjectData
+    where TSharedData : new()
+    where TServiceCore : IServiceCore<TServiceData>, new() {
     protected override Task ProcessData(TServiceData serviceData, TSubjectData subjectData,
-        InitTuple<Register, TSharedData> initTuple, Logger2Event? logger) {
-        return ProcessData(serviceData, subjectData, initTuple.Item1, initTuple.Item2 , logger);
+        InitTuple<Register, TSharedData> initTuple) {
+        return ProcessData(serviceData, subjectData, initTuple.Item1, initTuple.Item2);
     }
 
     protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, Register register,
-        TSharedData sharedData , Logger2Event? logger);
+        TSharedData sharedData);
+
+    protected override InitTuple<Register, TSharedData> Init((Register, TInitData) initData) {
+        return new InitTuple<Register, TSharedData>(initData.Item1, SubInit(initData.Item2));
+    }
+
+    protected abstract TSharedData SubInit(TInitData initData);
 }

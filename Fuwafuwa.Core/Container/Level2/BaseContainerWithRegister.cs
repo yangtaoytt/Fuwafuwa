@@ -8,18 +8,22 @@ using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
+using Fuwafuwa.Core.ServiceCore.Level0;
 using Fuwafuwa.Core.ServiceRegister;
 
 namespace Fuwafuwa.Core.Container.Level2;
 
 public abstract class
-    BaseContainerWithRegister<TService, TServiceData, TSubjectData, TSharedData> : APublicChannelContainer<TService,
-    TServiceData, TSubjectData, InitTuple<Register, TSharedData>>
-    where TService : AServiceWithRegister<TServiceData, TSubjectData, TSharedData>, new()
+    BaseContainerWithRegister<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData> :
+    APublicChannelContainer<TServiceCore, TService,
+        TServiceData, TSubjectData, InitTuple<Register, TSharedData>, (Register, TInitData)>
+    where TService : AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData>, new()
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TSharedData : new() {
-    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter,Logger2Event? logger) : base(serviceCount, setter, logger) { }
+    where TSharedData : new()
+    where TServiceCore : IServiceCore<TServiceData>, new() {
+    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter, (Register, TInitData) initData,
+        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
 
     protected override Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
         IRegisterData registerData) {
@@ -52,12 +56,10 @@ public abstract class
                 removeRegisterData.UnregisterConfirmDelegate(ServiceAttributeType, removeRegisterData.ServiceType);
                 break;
             default:
-                Logger?.Error(this, "Strange RegisterData type");
                 throw new Exception("strange RegisterData type");
         }
 
         if (serviceData is not NullServiceData || subjectData is not NullSubjectData) {
-            Logger?.Error(this, "Strange ServiceData/SubjectData type");
             throw new Exception("strange ServiceData/SubjectData type");
         }
 

@@ -4,4 +4,4 @@ using Fuwafuwa.Core.Data.ServiceData.Level1;
 
 namespace Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 
-public class ITaskAgentAttribute : Certificate.IServiceAttribute<ITaskAgentAttribute, TaskAgentData>, IReceiveTrue { }
+public class ITaskAgentAttribute : Certificate.IServiceAttribute<ITaskAgentAttribute, TaskAgentData>, IReceiveTrue;

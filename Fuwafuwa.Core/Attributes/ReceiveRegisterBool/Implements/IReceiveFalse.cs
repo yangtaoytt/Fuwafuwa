@@ -2,4 +2,4 @@ using Fuwafuwa.Core.Attributes.ReceiveRegisterBool.Abstract;
 
 namespace Fuwafuwa.Core.Attributes.ReceiveRegisterBool.Implements;
 
-public interface IReceiveFalse : IReceiveBool { }
+public interface IReceiveFalse : IReceiveBool;

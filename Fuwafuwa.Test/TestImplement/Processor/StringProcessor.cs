@@ -1,6 +1,6 @@
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Log;
-using Fuwafuwa.Core.Service.Level2;
+using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.Subjects;
 using Fuwafuwa.Test.TestImplement.Attribute.Executor;
 using Fuwafuwa.Test.TestImplement.Attribute.Processor;
@@ -8,13 +8,16 @@ using Fuwafuwa.Test.TestImplement.Data;
 
 namespace Fuwafuwa.Test.TestImplement.Processor;
 
-public class StringProcessor : BaseProcessService<StringData, object> {
-
-    public override IServiceAttribute<StringData> GetServiceAttribute() {
+public class StringProcessor : IProcessorCore<StringData, object, object> {
+    public static IServiceAttribute<StringData> GetServiceAttribute() {
         return IReadString.GetInstance();
     }
 
-    protected override Task<List<Certificate>> ProcessData(StringData data, object sharedData, Logger2Event? logger) {
+    public static object Init(object initData) {
+        return new object();
+    }
+
+    public Task<List<Certificate>> ProcessData(StringData data, object sharedData, Logger2Event? logger) {
         logger?.Debug(this, data.Data + " Into StringProcessor");
         return Task.FromResult(
             new List<Certificate> {
@@ -26,4 +29,6 @@ public class StringProcessor : BaseProcessService<StringData, object> {
             }
         );
     }
+
+    public static void Final(object sharedData, Logger2Event? logger) { }
 }

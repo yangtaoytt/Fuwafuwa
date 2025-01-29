@@ -5,6 +5,7 @@ using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Distributor.Interface;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level0;
+using Fuwafuwa.Core.ServiceCore.Level0;
 
 namespace Fuwafuwa.Core.Container.Level0;
 
@@ -14,29 +15,32 @@ public interface IContainer {
     public Task Run(CancellationToken cancellationToken);
 }
 
-public abstract class AContainer<TService, TServiceData, TSubjectData, TSharedData> : IContainer
-    where TService : AService<TServiceData, TSubjectData, TSharedData>, new()
+public abstract class
+    AContainer<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData> : IContainer
+    where TService : AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData>, new()
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TSharedData : new() {
+    where TServiceCore : IServiceCore<TServiceData>, new() {
     public delegate IDistributor<TServiceData, TSubjectData, TSharedData> DelSetDistribute();
 
     private readonly int _serviceCount;
 
     private readonly List<TService> _services;
 
-
-    protected readonly TSharedData SharedData;
-    
     protected readonly Logger2Event? Logger;
 
-    protected AContainer(int serviceCount, DelSetDistribute setter, Logger2Event? logger) {
+
+    protected readonly TSharedData SharedData;
+
+    protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger) {
+        logger?.Info(this, "Init container");
+
         _serviceCount = serviceCount;
         Logger = logger;
         _services = [];
         InternalMainChannel = Channel.CreateUnbounded<(IServiceData, ISubjectData, IRegisterData)>();
         Distributor = setter();
-        SharedData = new TSharedData();
+        SharedData = new TService().Init(initData, logger);
 
 
         for (var i = 0; i < _serviceCount; i++) {
@@ -51,8 +55,11 @@ public abstract class AContainer<TService, TServiceData, TSubjectData, TSharedDa
     protected Channel<(IServiceData, ISubjectData, IRegisterData)> InternalMainChannel { get; }
 
     public async Task Run(CancellationToken cancellationToken) {
+        Logger?.Info(this, "Run container");
+
+        CancellationTokenSource serviceCancellationTokenSource = new();
         try {
-            var tasks = _services.Select(processor => processor.Run(cancellationToken)).ToList();
+            var tasks = _services.Select(processor => processor.Run(serviceCancellationTokenSource.Token)).ToList();
 
             try {
                 await foreach (var dataObject in InternalMainChannel.Reader.ReadAllAsync(
@@ -60,16 +67,21 @@ public abstract class AContainer<TService, TServiceData, TSubjectData, TSharedDa
                     Logger?.Debug(this, "Received data");
                     var (serviceData, subjectData, registerData) = dataObject;
                     if (serviceData is TServiceData tServiceData && subjectData is TSubjectData tSubjectData) {
-                        Logger?.Debug(this, "Handle service data");
                         await HandleServiceData(tServiceData, tSubjectData);
                     } else {
                         Logger?.Debug(this, "Handle other data");
                         await HandleOtherData(serviceData, subjectData, registerData);
                     }
                 }
-            } catch (OperationCanceledException e) { }
+            } catch (OperationCanceledException) {
+                Logger?.Debug(this, "Container canceled");
+            } finally {
+                new TService().Final(SharedData, Logger);
+                await serviceCancellationTokenSource.CancelAsync();
+                await Task.WhenAll(tasks);
 
-            await Task.WhenAll(tasks);
+                Logger?.Info(this, "Container final");
+            }
         } catch (Exception e) {
             Logger?.Error(this, e.Message);
             throw;
@@ -80,7 +92,7 @@ public abstract class AContainer<TService, TServiceData, TSubjectData, TSharedDa
     public (Type attributeType, Type serviceType) ServiceAttributeType { get; init; }
 
 
-    protected ChannelWriter<(TServiceData, TSubjectData, TSharedData, Logger2Event?)> DistributeData(TServiceData serviceData,
+    private ChannelWriter<(TServiceData, TSubjectData, TSharedData)> DistributeData(TServiceData serviceData,
         TSubjectData subjectData, TSharedData sharedData) {
         return _services[Distributor.Distribute(_serviceCount, serviceData, subjectData, sharedData)].Writer;
     }
@@ -89,6 +101,7 @@ public abstract class AContainer<TService, TServiceData, TSubjectData, TSharedDa
         IRegisterData registerData);
 
     private async Task HandleServiceData(TServiceData serviceData, TSubjectData subjectData) {
-        await DistributeData(serviceData, subjectData, SharedData).WriteAsync((serviceData, subjectData, SharedData, Logger));
+        Logger?.Debug(this, "Handle service data");
+        await DistributeData(serviceData, subjectData, SharedData).WriteAsync((serviceData, subjectData, SharedData));
     }
 }

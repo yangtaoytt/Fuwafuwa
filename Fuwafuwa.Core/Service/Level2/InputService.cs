@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 using Fuwafuwa.Core.Data.ExecuteDataSet;
+using Fuwafuwa.Core.Data.InitTuple;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
@@ -9,18 +10,21 @@ using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
+using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.ServiceRegister;
 using Fuwafuwa.Core.Subjects;
 using Fuwafuwa.Core.Utils;
 
 namespace Fuwafuwa.Core.Service.Level2;
 
-public abstract class
-    BaseInputService<TSharedData> : AServiceWithRegister<InputPackagedData, NullSubjectData, TSharedData>
-    where TSharedData : new() {
-    protected abstract Task<List<Certificate>> ProcessData(InputPackagedData data, TSharedData sharedData, Logger2Event? logger);
-
+public class
+    InputService<TInputCore, TSharedData, TInitData> : AServiceWithRegister<TInputCore, InputPackagedData,
+    NullSubjectData, TSharedData, TInitData>
+    where TSharedData : new()
+    where TInputCore : IInputCore<TSharedData, TInitData>, new() {
     private async Task HandleResult(List<Certificate> certificates, Register register) {
+        Logger?.Debug(this, "HandleResult");
+
         var processorData = new Dictionary<Type, IServiceData>();
         var taskSet = new ExecuteDataSet();
         foreach (var certificate in certificates) {
@@ -62,11 +66,16 @@ public abstract class
     }
 
     protected override async Task ProcessData(InputPackagedData serviceData, NullSubjectData subjectData,
-        Register register, TSharedData sharedData , Logger2Event? logger) {
-        await HandleResult(await ProcessData(serviceData, sharedData, logger), register);
+        Register register, TSharedData sharedData) {
+        await HandleResult(await ServiceCore.ProcessData(serviceData, sharedData, Logger), register);
     }
 
-    public override IServiceAttribute<InputPackagedData> GetServiceAttribute() {
-        return new IInputAttribute();
+    protected override TSharedData SubInit(TInitData initData) {
+        return TInputCore.Init(initData);
+    }
+
+    public override void Final(InitTuple<Register, TSharedData> sharedData, Logger2Event? logger) {
+        base.Final(sharedData, logger);
+        TInputCore.Final(sharedData.Item2, logger);
     }
 }

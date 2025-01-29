@@ -1,18 +1,19 @@
 using System.Diagnostics;
-using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
-using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
+using Fuwafuwa.Core.Data.InitTuple;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
+using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.ServiceRegister;
 
 namespace Fuwafuwa.Core.Service.Level2;
 
-public class TaskAgentService : AServiceWithRegister<TaskAgentData, NullSubjectData, object> {
+public class TaskAgentService : AServiceWithRegister<TaskAgentCore, TaskAgentData, NullSubjectData, object, object> {
     protected override async Task ProcessData(TaskAgentData serviceData, NullSubjectData subjectData, Register register,
-        object sharedData, Logger2Event? logger) {
+        object sharedData) {
+        Logger?.Debug(this, "ProcessTaskAgentData");
         var taskSet = serviceData.ExecuteTaskSet;
         var tasks = taskSet.GetTasks();
 
@@ -30,7 +31,12 @@ public class TaskAgentService : AServiceWithRegister<TaskAgentData, NullSubjectD
         }
     }
 
-    public override IServiceAttribute<TaskAgentData> GetServiceAttribute() {
-        return new ITaskAgentAttribute();
+    protected override object SubInit(object initData) {
+        return new object();
+    }
+
+    public override void Final(InitTuple<Register, object> sharedData, Logger2Event? logger) {
+        base.Final(sharedData, logger);
+        SubjectBufferCore.Final(sharedData, logger);
     }
 }

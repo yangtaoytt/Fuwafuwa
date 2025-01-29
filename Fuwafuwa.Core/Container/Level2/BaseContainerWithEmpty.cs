@@ -5,21 +5,24 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level1;
+using Fuwafuwa.Core.ServiceCore.Level0;
 
 namespace Fuwafuwa.Core.Container.Level2;
 
 public abstract class
-    BaseContainerWithEmpty<TService, TServiceData, TSubjectData, TSharedData> : APublicChannelContainer<TService,
-    TServiceData, TSubjectData, InitTuple<TSharedData>>
-    where TService : AServiceWithEmpty<TServiceData, TSubjectData, TSharedData>, new()
+    BaseContainerWithEmpty<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData> :
+    APublicChannelContainer<TServiceCore, TService,
+        TServiceData, TSubjectData, InitTuple<TSharedData>, TInitData>
+    where TService : AServiceWithEmpty<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData>, new()
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TSharedData : new() {
-    protected BaseContainerWithEmpty(int serviceCount, DelSetDistribute setter,Logger2Event? logger) : base(serviceCount, setter, logger) { }
+    where TSharedData : new()
+    where TServiceCore : IServiceCore<TServiceData>, new() {
+    protected BaseContainerWithEmpty(int serviceCount, DelSetDistribute setter, TInitData initData,
+        Logger2Event? logger) : base(serviceCount, setter, initData, logger) { }
 
     protected override Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
         IRegisterData registerData) {
-        Logger?.Error(this, "This container does not support other data.");
         throw new Exception("This container does not support other data.");
     }
 }

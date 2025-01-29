@@ -2,7 +2,7 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 
 namespace Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 
-public interface IServiceAttribute { }
+public interface IServiceAttribute;
 
 public abstract class IServiceAttribute<TServiceData> : IServiceAttribute where TServiceData : IServiceData {
     public abstract Certificate GetCertificate(TServiceData serviceData);

@@ -3,14 +3,17 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level2;
+using Fuwafuwa.Core.ServiceCore.Level3;
 
 namespace Fuwafuwa.Core.Container.Level3;
 
 public class
-    ExecutorContainer<TService, TServiceData, TSharedData> : BaseContainerWithEmpty<TService, TServiceData,
-    NullSubjectData,
-    TSharedData> where TService : BaseExecutorService<TServiceData, TSharedData>, new()
+    ExecutorContainer<TExecutorCore, TServiceData, TSharedData, TInitData> : BaseContainerWithEmpty<TExecutorCore,
+    ExecutorService<TExecutorCore, TServiceData, TSharedData, TInitData>, TServiceData, NullSubjectData, TSharedData,
+    TInitData>
     where TSharedData : new()
-    where TServiceData : IServiceData {
-    public ExecutorContainer(int serviceCount, DelSetDistribute setter,Logger2Event? logger) : base(serviceCount, setter, logger) { }
+    where TServiceData : IServiceData
+    where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new() {
+    public ExecutorContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger) :
+        base(serviceCount, setter, initData, logger) { }
 }
