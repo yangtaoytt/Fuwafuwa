@@ -1,6 +1,7 @@
 using Fuwafuwa.Core.Container.Level3;
-using Fuwafuwa.Core.Data.InitTuple;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
+using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
+using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Distributor.Implement;
@@ -30,12 +31,14 @@ public class Env {
         _cancelSource = new CancellationTokenSource();
 
         var subjectBufferContainer = new SubjectBufferContainer(concurrencyLevel,
-            () => new HashDistributor<NullServiceData, SubjectData, InitTuple<Register, object>>(),
-            (new Register(), new object()),new Lock(), _logger);
+            () => new HashDistributor<NullServiceData, SubjectData, (SimpleSharedDataWrapper<Register>, NullSharedDataWrapper<object>)>(),
+            (new SimpleSharedDataWrapper<Register>(new Register()), new object())
+            , _logger);
 
         var taskAgentContainer = new TaskAgentContainer(ConcurrencyLevel,
-            () => new PollingDistributor<TaskAgentData, NullSubjectData, InitTuple<Register, object>>(),
-            (new Register(), new object()),new Lock(), _logger);
+            () => new PollingDistributor<TaskAgentData, NullSubjectData, (SimpleSharedDataWrapper<Register>, NullSharedDataWrapper<object>)>(),
+            (new SimpleSharedDataWrapper<Register>(new Register()), new object())
+            , _logger);
 
         _defaultServiceTask = [
             RunTask(subjectBufferContainer),
@@ -121,42 +124,40 @@ public class Env {
 
 
     public async Task<(Type, InputHandler<TInputData>)> CreateRunRegisterPollingInput<TInputCore, TInputData,
-        TSharedData, TInitData>(Lock sharedDataLock)
-        where TInputCore : IInputCore<TSharedData, TInitData>, new() where TSharedData : new() where TInitData : new() {
+        TSharedData, TInitData>(TInitData initData)
+        where TInputCore : IInputCore<TSharedData, TInitData>, new() where TInitData : new() where TSharedData : ISharedDataWrapper {
         var inputHandler = new InputHandler<TInputData>();
 
         var inputContainer = new InputContainer<TInputCore, TInputData, TSharedData, TInitData>(
             ConcurrencyLevel,
-            () => new PollingDistributor<InputPackagedData, NullSubjectData, InitTuple<Register, TSharedData>>(),
-            inputHandler, (new Register(), new TInitData()),sharedDataLock, _logger);
+            () => new PollingDistributor<InputPackagedData, NullSubjectData, (SimpleSharedDataWrapper<Register>, TSharedData)>(),
+            inputHandler, (new SimpleSharedDataWrapper<Register>(new Register()), new TInitData()), _logger);
         var serviceType = await RunRegister(inputContainer);
 
         return (serviceType, inputHandler);
     }
 
 
-    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(Lock sharedDataLock)
+    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(TInitData initData)
         where TServiceData : IProcessorData
-        where TSharedData : new()
-        where TInitData : new()
-        where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new() {
+        where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new()
+        where TSharedData : ISharedDataWrapper {
         var processorContainer = new ProcessorContainer<TProcessorCore, TServiceData, TSharedData, TInitData>(
             ConcurrencyLevel,
-            () => new PollingDistributor<TServiceData, SubjectDataWithCommand, InitTuple<Register, TSharedData>>(),
-            (new Register(), new TInitData()),sharedDataLock, _logger);
+            () => new PollingDistributor<TServiceData, SubjectDataWithCommand, (SimpleSharedDataWrapper<Register>, TSharedData)>(),
+            (new SimpleSharedDataWrapper<Register>(new Register()), initData), _logger);
         var serviceType = await RunRegister(processorContainer);
 
         return serviceType;
     }
 
-    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(Lock sharedDataLock)
+    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(TInitData initData)
         where TServiceData : AExecutorData
-        where TSharedData : new()
-        where TInitData : new()
-        where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new() {
+        where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new()
+        where TSharedData : ISharedDataWrapper {
         var executorContainer = new ExecutorContainer<TExecutorCore, TServiceData, TSharedData, TInitData>(
             ConcurrencyLevel,
-            () => new PollingDistributor<TServiceData, NullSubjectData, InitTuple<TSharedData>>(), new TInitData(),sharedDataLock,
+            () => new PollingDistributor<TServiceData, NullSubjectData, ValueTuple<TSharedData>>(), initData,
             _logger);
         var serviceType = await RunRegister(executorContainer);
         return serviceType;

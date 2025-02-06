@@ -1,6 +1,8 @@
-using Fuwafuwa.Core.Data.InitTuple;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
+using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
+using Fuwafuwa.Core.Log;
+using Fuwafuwa.Core.Service.Interface;
 using Fuwafuwa.Core.Service.Level0;
 using Fuwafuwa.Core.ServiceCore.Level0;
 using Fuwafuwa.Core.ServiceRegister;
@@ -8,24 +10,41 @@ using Fuwafuwa.Core.ServiceRegister;
 namespace Fuwafuwa.Core.Service.Level1;
 
 public abstract class
-    AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData> : AService<TServiceCore,
-    TServiceData, TSubjectData, InitTuple<
-        Register,
-        TSharedData>, (Register, TInitData)> where TServiceData : IServiceData
+    AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TService, TResService> : AService<TServiceCore,
+    TServiceData, TSubjectData, (SimpleSharedDataWrapper<Register>, TSharedData),
+    (SimpleSharedDataWrapper<Register>, TInitData),
+    AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>,
+    TResService>,
+    IPrimitiveService<
+        AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>, (
+        SimpleSharedDataWrapper<Register>, TSharedData), (SimpleSharedDataWrapper<Register>, TInitData), TResService>
+    where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TSharedData : new()
-    where TServiceCore : IServiceCore<TServiceData>, new() {
-    protected override Task ProcessData(TServiceData serviceData, TSubjectData subjectData,
-        InitTuple<Register, TSharedData> initTuple, Lock sharedDataLock) {
-        return ProcessData(serviceData, subjectData, initTuple.Item1, initTuple.Item2, sharedDataLock);
+    where TServiceCore : IServiceCore<TServiceData>, new() 
+    where TService : class, IPrimitiveService<TService, TSharedData, TInitData, TResService> {
+    protected AServiceWithRegister(Logger2Event? logger) : base(logger) { }
+
+    protected sealed  override Task ProcessData(TServiceData serviceData, TSubjectData subjectData,
+        (SimpleSharedDataWrapper<Register>, TSharedData) sharedData) {
+        CreateService(null);
+        return ProcessData(serviceData, subjectData, sharedData.Item1, sharedData.Item2);
     }
 
-    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData, Register register,
-        TSharedData sharedData,Lock sharedDataLock);
+    protected abstract Task ProcessData(TServiceData serviceData, TSubjectData subjectData,
+        SimpleSharedDataWrapper<Register> register,
+        TSharedData sharedData);
 
-    protected override InitTuple<Register, TSharedData> Init((Register, TInitData) initData) {
-        return new InitTuple<Register, TSharedData>(initData.Item1, SubInit(initData.Item2));
+    public static TResService CreateService(Logger2Event? logger, AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TService, TResService>? uniqueService = null) {
+        return TService.CreateService(logger);
     }
 
-    protected abstract TSharedData SubInit(TInitData initData);
+    public static void FinalPrimitive((SimpleSharedDataWrapper<Register>, TSharedData) sharedData, Logger2Event? logger,
+        AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TService, TResService>? uniqueService = null) {
+        TService.FinalPrimitive(sharedData.Item2, logger);
+    }
+
+    public static (SimpleSharedDataWrapper<Register>, TSharedData) InitServicePrimitive((SimpleSharedDataWrapper<Register>, TInitData) initData,
+        AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TService, TResService>? uniqueService = null) {
+        return (new SimpleSharedDataWrapper<Register>(new Register()), TService.InitServicePrimitive(initData.Item2));
+    }
 }

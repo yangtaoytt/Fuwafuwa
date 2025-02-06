@@ -4,6 +4,7 @@ using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Distributor.Interface;
 using Fuwafuwa.Core.Log;
+using Fuwafuwa.Core.Service.Interface;
 using Fuwafuwa.Core.Service.Level0;
 using Fuwafuwa.Core.ServiceCore.Level0;
 
@@ -16,11 +17,12 @@ public interface IContainer {
 }
 
 public abstract class
-    AContainer<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData> : IContainer
-    where TService : AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData>, new()
+    AContainer<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData, TNextService> : IContainer
+    where TService : AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TServiceCore : IServiceCore<TServiceData>, new() {
+    where TServiceCore : IServiceCore<TServiceData>, new()
+    where TNextService : class, IPrimitiveService<TNextService, TSharedData, TInitData, TService> {
     public delegate IDistributor<TServiceData, TSubjectData, TSharedData> DelSetDistribute();
 
     private readonly int _serviceCount;
@@ -31,25 +33,23 @@ public abstract class
     
     protected readonly TSharedData SharedData;
     
-    protected readonly Lock SharedDataLock;
 
-    protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Lock sharedDataLock, Logger2Event? logger = null) {
+    protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger = null) {
         logger?.Info(this, "Init container");
 
         _serviceCount = serviceCount;
         Logger = logger;
-        SharedDataLock = sharedDataLock;
         _services = [];
         InternalMainChannel = Channel.CreateUnbounded<(IServiceData, ISubjectData, IRegisterData)>();
         Distributor = setter();
-        SharedData = new TService().Init(initData, logger);
+        SharedData = AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.InitServicePrimitive(initData);
 
 
         for (var i = 0; i < _serviceCount; i++) {
-            _services.Add(new TService());
+            _services.Add(AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.CreateService(logger));
         }
 
-        ServiceAttributeType = (new TService().GetServiceAttribute().GetType(), GetType());
+        ServiceAttributeType = (AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.GetServiceAttribute().GetType(), GetType());
     }
 
     private IDistributor<TServiceData, TSubjectData, TSharedData> Distributor { get; }
@@ -78,7 +78,7 @@ public abstract class
             } catch (OperationCanceledException) {
                 Logger?.Debug(this, "Container canceled");
             } finally {
-                new TService().Final(SharedData, Logger);
+                AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.FinalPrimitive(SharedData, Logger);
                 await serviceCancellationTokenSource.CancelAsync();
                 await Task.WhenAll(tasks);
 
@@ -94,9 +94,9 @@ public abstract class
     public (Type attributeType, Type serviceType) ServiceAttributeType { get; init; }
 
 
-    private ChannelWriter<(TServiceData, TSubjectData, TSharedData, Lock)> DistributeData(TServiceData serviceData,
-        TSubjectData subjectData, TSharedData sharedData, Lock sharedDataLock) {
-        return _services[Distributor.Distribute(_serviceCount, serviceData, subjectData, sharedData,sharedDataLock)].Writer;
+    private ChannelWriter<(TServiceData, TSubjectData, TSharedData)> DistributeData(TServiceData serviceData,
+        TSubjectData subjectData, TSharedData sharedData) {
+        return _services[Distributor.Distribute(_serviceCount, serviceData, subjectData, sharedData)].Writer;
     }
 
     protected abstract Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
@@ -104,6 +104,6 @@ public abstract class
 
     private async Task HandleServiceData(TServiceData serviceData, TSubjectData subjectData) {
         Logger?.Debug(this, "Handle service data");
-        await DistributeData(serviceData, subjectData, SharedData, SharedDataLock).WriteAsync((serviceData, subjectData, SharedData,SharedDataLock));
+        await DistributeData(serviceData, subjectData, SharedData).WriteAsync((serviceData, subjectData, SharedData));
     }
 }

@@ -1,5 +1,7 @@
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
+using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
 using Fuwafuwa.Core.Log;
+using Fuwafuwa.Core.ServiceCore.Level1;
 using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.Subjects;
 using Fuwafuwa.Test.TestImplement.Attribute.Executor;
@@ -8,27 +10,24 @@ using Fuwafuwa.Test.TestImplement.Data;
 
 namespace Fuwafuwa.Test.TestImplement.Processor;
 
-public class StringProcessor : IProcessorCore<StringData, object, object> {
+public class StringProcessor : IProcessorCore<StringData, NullSharedDataWrapper<object>, object> {
     public static IServiceAttribute<StringData> GetServiceAttribute() {
         return IReadString.GetInstance();
     }
-
-    public static object Init(object initData) {
-        return new object();
+    
+    public static NullSharedDataWrapper<object> Init(object initData) {
+        return new NullSharedDataWrapper<object>(initData);
     }
-
-    public Task<List<Certificate>> ProcessData(StringData data, object sharedData,Lock sharedDataLock, Logger2Event? logger) {
+    public static void Final(NullSharedDataWrapper<object> sharedData, Logger2Event? logger) { }
+    public async Task<List<Certificate>> ProcessData(StringData data, NullSharedDataWrapper<object> sharedData, Logger2Event? logger) {
+        await Task.CompletedTask;
         logger?.Debug(this, data.Data + " Into StringProcessor");
-        return Task.FromResult(
-            new List<Certificate> {
-                IWriteToConsole.GetInstance()
-                    .GetCertificate(
-                        new WriteToConsoleData(new Priority(1, PriorityStrategy.Share),
-                            data.Data + "<from StringProcessor>")
-                    )
-            }
-        );
+        return [
+            IWriteToConsole.GetInstance()
+                .GetCertificate(
+                    new WriteToConsoleData(new Priority(1, PriorityStrategy.Share),
+                        data.Data + "<from StringProcessor>")
+                )
+        ];
     }
-
-    public static void Final(object sharedData, Logger2Event? logger) { }
 }

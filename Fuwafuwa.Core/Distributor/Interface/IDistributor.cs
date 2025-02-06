@@ -5,5 +5,5 @@ namespace Fuwafuwa.Core.Distributor.Interface;
 
 public interface IDistributor<in TServiceData, in TSubjectData, in TSharedData>
     where TServiceData : IServiceData where TSubjectData : ISubjectData {
-    int Distribute(int processorCount, TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData,Lock sharedDataLock);
+    int Distribute(int processorCount, TServiceData serviceData, TSubjectData subjectData, TSharedData sharedData);
 }

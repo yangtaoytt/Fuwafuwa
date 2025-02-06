@@ -1,14 +1,19 @@
 using System.Diagnostics;
+using System.Threading.Channels;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 using Fuwafuwa.Core.Data.ExecuteDataSet;
-using Fuwafuwa.Core.Data.InitTuple;
+using Fuwafuwa.Core.Data.RegisterData.Level0;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
+using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
+using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
+using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Log;
+using Fuwafuwa.Core.Service.Interface;
 using Fuwafuwa.Core.Service.Level1;
 using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.ServiceRegister;
@@ -18,22 +23,23 @@ namespace Fuwafuwa.Core.Service.Level2;
 
 public class
     ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData> : AServiceWithRegister<TProcessorCore,
-    TServiceData, SubjectDataWithCommand,
-    TSharedData, TInitData> where TServiceData : IProcessorData
-    where TSharedData : new()
+    TServiceData, SubjectDataWithCommand, TSharedData, TInitData,
+    ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>,
+    ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>>,
+    IPrimitiveService<ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>, TSharedData, TInitData,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>> where TServiceData : IProcessorData
+    where TSharedData : ISharedDataWrapper
     where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new() {
-    protected override async Task ProcessData(TServiceData serviceData, SubjectDataWithCommand subjectData,
-        Register register,
-        TSharedData sharedData, Lock sharedDataLock) {
-        await HandleDataAndTask(await ServiceCore.ProcessData(serviceData, sharedData,sharedDataLock, Logger), subjectData, register);
-    }
+    private ProcessService(Logger2Event? logger) : base(logger) { }
 
-    protected override TSharedData SubInit(TInitData initData) {
-        return TProcessorCore.Init(initData);
+    protected override async Task ProcessData(TServiceData serviceData, SubjectDataWithCommand subjectData,
+        SimpleSharedDataWrapper<Register> register,
+        TSharedData sharedData) {
+        await HandleDataAndTask(await ServiceCore.ProcessData(serviceData, sharedData, Logger), subjectData, register);
     }
 
     private async Task HandleDataAndTask(List<Certificate> certificates,
-        SubjectDataWithCommand subjectDataWithCommand, Register register) {
+        SubjectDataWithCommand subjectDataWithCommand, SimpleSharedDataWrapper<Register> register) {
         Logger?.Debug(this, "HandleDataAndTask");
         var processorData = new Dictionary<Type, IServiceData>();
         var taskSet = new ExecuteDataSet();
@@ -49,7 +55,8 @@ public class
         }
 
         if (processorData.Count == 0) {
-            var bufferChannelList = register.GetTypeChannel(typeof(ISubjectBufferAttribute));
+            var bufferChannelList = 
+                register.Execute(reg => reg.Value.GetTypeChannel(typeof(ISubjectBufferAttribute)));
             Debug.Assert(bufferChannelList.Count == 1);
             var bufferChannel = bufferChannelList[0];
 
@@ -60,7 +67,7 @@ public class
                     taskSet), new NullRegisterData()));
         } else {
             foreach (var (key, value) in processorData) {
-                var channelList = register.GetTypeChannel(key);
+                var channelList = register.Execute(reg => reg.Value.GetTypeChannel(key));
 
                 for (var i = 0; i < channelList.Count; ++i) {
                     var channel = channelList[i];
@@ -75,8 +82,13 @@ public class
         }
     }
 
-    public override void Final(InitTuple<Register, TSharedData> sharedData, Logger2Event? logger) {
-        base.Final(sharedData, logger);
-        TProcessorCore.Final(sharedData.Item2, logger);
+    public static ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData> CreateService(Logger2Event? logger, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        return new ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>(logger);
+    }
+    public static void FinalPrimitive(TSharedData sharedData, Logger2Event? logger, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        TProcessorCore.Final(sharedData, logger);
+    }
+    public static TSharedData InitServicePrimitive(TInitData initData, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        return TProcessorCore.Init(initData);
     }
 }
