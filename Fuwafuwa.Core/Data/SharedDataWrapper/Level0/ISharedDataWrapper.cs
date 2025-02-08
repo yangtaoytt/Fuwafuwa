@@ -1,3 +1,3 @@
-namespace Fuwafuwa.Core.Data.SharedDataWapper.Level0;
+namespace Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
 
 public interface ISharedDataWrapper;

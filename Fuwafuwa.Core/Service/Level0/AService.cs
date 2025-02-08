@@ -9,25 +9,45 @@ using Fuwafuwa.Core.ServiceCore.Level0;
 namespace Fuwafuwa.Core.Service.Level0;
 
 public abstract class
-    AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService> :IPrimitiveService<AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>,TSharedData, TInitData, TResService>
+    AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService> : IService<
+    AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>, TSharedData,
+    TInitData, TResService>
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
-    where TServiceCore : IServiceCore<TServiceData>, new() 
-    where TService : class, IPrimitiveService<TService, TSharedData, TInitData, TResService> {
+    where TServiceCore : IServiceCore<TServiceData>, new()
+    where TService : class, IService<TService, TSharedData, TInitData, TResService> {
     private readonly Channel<(TServiceData, TSubjectData, TSharedData)> _channel;
 
-    protected readonly TServiceCore ServiceCore;
-
     protected readonly Logger2Event? Logger;
+
+    protected readonly TServiceCore ServiceCore;
 
     protected AService(Logger2Event? logger) {
         _channel = Channel.CreateUnbounded<(TServiceData, TSubjectData, TSharedData)>();
         ServiceCore = new TServiceCore();
-        
+
         Logger = logger;
     }
 
     public ChannelWriter<(TServiceData, TSubjectData, TSharedData)> Writer => _channel.Writer;
+
+    public static TResService CreateService(Logger2Event? logger,
+        AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>?
+            uniqueService = null) {
+        return TService.CreateService(logger);
+    }
+
+    public static void Final(TSharedData sharedData, Logger2Event? logger,
+        AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>?
+            uniqueService = null) {
+        TService.Final(sharedData, logger);
+    }
+
+    public static TSharedData InitService(TInitData initData,
+        AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>?
+            uniqueService = null) {
+        return TService.InitService(initData);
+    }
 
     public async Task Run(CancellationToken cancellationToken) {
         Logger?.Info(this, "Run service");
@@ -52,15 +72,5 @@ public abstract class
 
     public static IServiceAttribute<TServiceData> GetServiceAttribute() {
         return TServiceCore.GetServiceAttribute();
-    }
-
-    public static TResService CreateService(Logger2Event? logger, AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>? uniqueService = null) {
-        return TService.CreateService(logger);
-    }
-    public static void FinalPrimitive(TSharedData sharedData, Logger2Event? logger, AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>? uniqueService = null) {
-        TService.FinalPrimitive(sharedData, logger);
-    }
-    public static TSharedData InitServicePrimitive(TInitData initData, AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>? uniqueService = null) {
-        return TService.InitServicePrimitive(initData);
     }
 }

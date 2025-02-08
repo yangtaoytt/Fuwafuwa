@@ -1,6 +1,6 @@
 using Fuwafuwa.Core.Container.Level2;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level2;
@@ -15,6 +15,7 @@ public sealed class
     where TServiceData : IServiceData
     where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new()
     where TSharedData : ISharedDataWrapper {
-    public ExecutorContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger = null) :
+    public ExecutorContainer(int serviceCount, DelSetDistribute setter, TInitData initData,
+        Logger2Event? logger = null) :
         base(serviceCount, setter, initData, logger) { }
 }

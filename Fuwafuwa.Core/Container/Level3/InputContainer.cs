@@ -1,8 +1,8 @@
 using Fuwafuwa.Core.Container.Level2;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
-using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.Service.Level2;
@@ -16,8 +16,7 @@ public sealed class
     InputService<TInputCore, TSharedData, TInitData>, InputPackagedData, NullSubjectData, TSharedData, TInitData,
     InputService<TInputCore, TSharedData, TInitData>>
     where TInputCore : IInputCore<TSharedData, TInitData>, new() where TSharedData : ISharedDataWrapper {
-
-    public InputContainer(int serviceCount, DelSetDistribute setter,InputHandler<TInputType> inputHandler,
+    public InputContainer(int serviceCount, DelSetDistribute setter, InputHandler<TInputType> inputHandler,
         (SimpleSharedDataWrapper<Register>, TInitData) initData, Logger2Event? logger = null) : base(serviceCount,
         setter, initData, logger) {
         inputHandler.OnInputEvent += OnInput;

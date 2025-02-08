@@ -1,6 +1,6 @@
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.ServiceCore.Level2;
 

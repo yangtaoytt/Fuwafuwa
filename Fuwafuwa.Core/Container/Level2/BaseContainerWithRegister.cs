@@ -3,7 +3,7 @@ using Fuwafuwa.Core.Data.RegisterData.Level0;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
-using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Log;
@@ -15,21 +15,26 @@ using Fuwafuwa.Core.ServiceRegister;
 namespace Fuwafuwa.Core.Container.Level2;
 
 public abstract class
-    BaseContainerWithRegister<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData,TNextService> :
+    BaseContainerWithRegister<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData,
+        TNextService> :
     APublicChannelContainer<TServiceCore, TService,
-        TServiceData, TSubjectData, (SimpleSharedDataWrapper<Register>, TSharedData), (SimpleSharedDataWrapper<Register>, TInitData),AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>>
-    where TService : AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>
+        TServiceData, TSubjectData, (SimpleSharedDataWrapper<Register>, TSharedData), (SimpleSharedDataWrapper<Register>
+        , TInitData), AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,
+            TNextService, TService>>
+    where TService : AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService
+        , TService>
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
     where TServiceCore : IServiceCore<TServiceData>, new()
-    where TNextService : class, IPrimitiveService<TNextService, TSharedData, TInitData, TService> {
-    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter, (SimpleSharedDataWrapper<Register>, TInitData) initData,
+    where TNextService : class, IService<TNextService, TSharedData, TInitData, TService> {
+    protected BaseContainerWithRegister(int serviceCount, DelSetDistribute setter,
+        (SimpleSharedDataWrapper<Register>, TInitData) initData,
         Logger2Event? logger = null) : base(serviceCount, setter, initData, logger) { }
 
     protected override Task HandleOtherData(IServiceData serviceData, ISubjectData subjectData,
         IRegisterData registerData) {
         var register = SharedData.Item1;
-        
+
         switch (registerData) {
             case AddRegisterData addRegisterData:
                 Logger?.Debug(this, "Add register data");
@@ -50,7 +55,7 @@ public abstract class
                 break;
             case RemoveRegisterData removeRegisterData:
                 Logger?.Debug(this, "Remove register data");
-                register.Execute(reg => reg.Value.ServiceTypes.TryRemove(removeRegisterData.ServiceType, out var _));
+                register.Execute(reg => reg.Value.ServiceTypes.TryRemove(removeRegisterData.ServiceType, out _));
                 removeRegisterData.UnregisterConfirmDelegate(ServiceAttributeType, removeRegisterData.ServiceType);
                 break;
             default:

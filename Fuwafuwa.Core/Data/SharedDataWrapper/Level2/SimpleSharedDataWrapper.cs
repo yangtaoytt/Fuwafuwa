@@ -1,31 +1,24 @@
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
 using Fuwafuwa.Core.Data.SharedDataWrapper.Level1;
 using Fuwafuwa.Core.Data.SharedDataWrapper.ReferenceBoxType;
 
-namespace Fuwafuwa.Core.Data.SharedDataWapper.Implement;
+namespace Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 
-public class SimpleSharedDataWrapper<T> : ISyncSharedDataWrapper<T,SimpleSharedDataWrapper<T>>
-{
-    private readonly Lock _lock = new Lock();
+public class SimpleSharedDataWrapper<T> : ISyncSharedDataWrapper<T, SimpleSharedDataWrapper<T>> {
     private readonly Reference<T> _data;
+    private readonly Lock _lock = new();
 
-    public SimpleSharedDataWrapper(T initialValue)
-    {
+    public SimpleSharedDataWrapper(T initialValue) {
         _data = new Reference<T>(initialValue);
     }
-    
-    public void Execute(Action<Reference<T>> action)
-    {
-        lock (_lock)
-        {
+
+    public void Execute(Action<Reference<T>> action) {
+        lock (_lock) {
             action(_data);
         }
     }
-    
-    public TResult Execute<TResult>(Func<Reference<T>, TResult> func)
-    {
-        lock (_lock)
-        {
+
+    public TResult Execute<TResult>(Func<Reference<T>, TResult> func) {
+        lock (_lock) {
             return func(_data);
         }
     }

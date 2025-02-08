@@ -18,11 +18,11 @@ public interface IContainer {
 
 public abstract class
     AContainer<TServiceCore, TService, TServiceData, TSubjectData, TSharedData, TInitData, TNextService> : IContainer
-    where TService : AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>
+    where TService : AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService, TService>
     where TServiceData : IServiceData
     where TSubjectData : ISubjectData
     where TServiceCore : IServiceCore<TServiceData>, new()
-    where TNextService : class, IPrimitiveService<TNextService, TSharedData, TInitData, TService> {
+    where TNextService : class, IService<TNextService, TSharedData, TInitData, TService> {
     public delegate IDistributor<TServiceData, TSubjectData, TSharedData> DelSetDistribute();
 
     private readonly int _serviceCount;
@@ -30,9 +30,9 @@ public abstract class
     private readonly List<TService> _services;
 
     protected readonly Logger2Event? Logger;
-    
+
     protected readonly TSharedData SharedData;
-    
+
 
     protected AContainer(int serviceCount, DelSetDistribute setter, TInitData initData, Logger2Event? logger = null) {
         logger?.Info(this, "Init container");
@@ -42,14 +42,20 @@ public abstract class
         _services = [];
         InternalMainChannel = Channel.CreateUnbounded<(IServiceData, ISubjectData, IRegisterData)>();
         Distributor = setter();
-        SharedData = AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.InitServicePrimitive(initData);
+        SharedData = AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService, TService>
+            .InitService(initData);
 
 
         for (var i = 0; i < _serviceCount; i++) {
-            _services.Add(AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.CreateService(logger));
+            _services.Add(
+                AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService, TService>
+                    .CreateService(logger));
         }
 
-        ServiceAttributeType = (AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.GetServiceAttribute().GetType(), GetType());
+        ServiceAttributeType = (
+            AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService, TService>
+                .GetServiceAttribute()
+                .GetType(), GetType());
     }
 
     private IDistributor<TServiceData, TSubjectData, TSharedData> Distributor { get; }
@@ -78,7 +84,8 @@ public abstract class
             } catch (OperationCanceledException) {
                 Logger?.Debug(this, "Container canceled");
             } finally {
-                AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData,TNextService,TService>.FinalPrimitive(SharedData, Logger);
+                AService<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TNextService, TService>
+                    .Final(SharedData, Logger);
                 await serviceCancellationTokenSource.CancelAsync();
                 await Task.WhenAll(tasks);
 

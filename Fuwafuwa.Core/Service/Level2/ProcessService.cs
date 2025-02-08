@@ -1,15 +1,12 @@
 using System.Diagnostics;
-using System.Threading.Channels;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 using Fuwafuwa.Core.Data.ExecuteDataSet;
-using Fuwafuwa.Core.Data.RegisterData.Level0;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
-using Fuwafuwa.Core.Data.SharedDataWapper.Implement;
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
-using Fuwafuwa.Core.Data.SubjectData.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
+using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Log;
@@ -23,14 +20,30 @@ namespace Fuwafuwa.Core.Service.Level2;
 
 public class
     ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData> : AServiceWithRegister<TProcessorCore,
-    TServiceData, SubjectDataWithCommand, TSharedData, TInitData,
-    ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>,
-    ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>>,
-    IPrimitiveService<ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>, TSharedData, TInitData,
+        TServiceData, SubjectDataWithCommand, TSharedData, TInitData,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>>,
+    IService<ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>, TSharedData, TInitData,
         ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>> where TServiceData : IProcessorData
     where TSharedData : ISharedDataWrapper
     where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new() {
     private ProcessService(Logger2Event? logger) : base(logger) { }
+
+    public static ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData> CreateService(
+        Logger2Event? logger,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        return new ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>(logger);
+    }
+
+    public static void Final(TSharedData sharedData, Logger2Event? logger,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        TProcessorCore.Final(sharedData, logger);
+    }
+
+    public static TSharedData InitService(TInitData initData,
+        ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
+        return TProcessorCore.Init(initData);
+    }
 
     protected override async Task ProcessData(TServiceData serviceData, SubjectDataWithCommand subjectData,
         SimpleSharedDataWrapper<Register> register,
@@ -55,7 +68,7 @@ public class
         }
 
         if (processorData.Count == 0) {
-            var bufferChannelList = 
+            var bufferChannelList =
                 register.Execute(reg => reg.Value.GetTypeChannel(typeof(ISubjectBufferAttribute)));
             Debug.Assert(bufferChannelList.Count == 1);
             var bufferChannel = bufferChannelList[0];
@@ -80,15 +93,5 @@ public class
                 }
             }
         }
-    }
-
-    public static ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData> CreateService(Logger2Event? logger, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
-        return new ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>(logger);
-    }
-    public static void FinalPrimitive(TSharedData sharedData, Logger2Event? logger, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
-        TProcessorCore.Final(sharedData, logger);
-    }
-    public static TSharedData InitServicePrimitive(TInitData initData, ProcessService<TProcessorCore, TServiceData, TSharedData, TInitData>? uniqueService = null) {
-        return TProcessorCore.Init(initData);
     }
 }

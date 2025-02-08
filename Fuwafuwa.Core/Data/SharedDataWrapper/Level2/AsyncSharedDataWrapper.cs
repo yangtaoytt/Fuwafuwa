@@ -1,12 +1,11 @@
-using Fuwafuwa.Core.Data.SharedDataWapper.Level0;
 using Fuwafuwa.Core.Data.SharedDataWrapper.Level1;
 using Fuwafuwa.Core.Data.SharedDataWrapper.ReferenceBoxType;
 
-namespace Fuwafuwa.Core.Data.SharedDataWapper.Implement;
+namespace Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 
 public class AsyncSharedDataWrapper<T> : IAsyncSharedDataWrapper<T, AsyncSharedDataWrapper<T>> {
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly Reference<T> _data;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public AsyncSharedDataWrapper(T initialValue) {
         _data = new Reference<T>(initialValue);
