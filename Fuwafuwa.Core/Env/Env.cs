@@ -58,6 +58,10 @@ public class Env {
 
     public int ConcurrencyLevel { get; init; }
 
+    public List<(Type serviceType, bool isRegister)> GetServiceStatus() {
+        return _customContainers.Select(kvp => (kvp.Key,kvp.Value.isRegisted)).ToList();
+    }
+
     private Task RunTask(IRegistrableContainer container) {
         return container.Run(_cancelSource.Token)
             .ContinueWith(
