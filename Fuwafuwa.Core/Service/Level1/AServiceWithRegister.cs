@@ -41,7 +41,8 @@ public abstract class
         (SimpleSharedDataWrapper<Register>, TInitData) initData,
         AServiceWithRegister<TServiceCore, TServiceData, TSubjectData, TSharedData, TInitData, TService, TResService>?
             uniqueService = null) {
-        return (new SimpleSharedDataWrapper<Register>(initData.Item1.Execute(reference=>reference.Value)), TService.InitService(initData.Item2));
+        return (new SimpleSharedDataWrapper<Register>(initData.Item1.Execute(reference => reference.Value)),
+            TService.InitService(initData.Item2));
     }
 
     protected sealed override Task ProcessData(TServiceData serviceData, TSubjectData subjectData,

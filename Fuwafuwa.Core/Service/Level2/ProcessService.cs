@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Threading.Channels;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
@@ -73,12 +72,14 @@ public class
         if (processorData.Count == 0) {
             var bufferChannelList =
                 register.Execute(reg => reg.Value.GetTypeChannel(typeof(ISubjectBufferAttribute)));
-            
+
             if (register.Execute(reference => reference.Value.ServiceTypes.Count) == 0) {
-                var channelList = register.Execute(reg => reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
+                var channelList = register.Execute(reg =>
+                    reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
                 if (channelList.Count == 0) {
                     return;
                 }
+
                 var channel = channelList[0];
                 await channel.Writer.WriteAsync(
                     (new NullServiceData(), new SubjectData(
@@ -87,8 +88,8 @@ public class
                         new ExecuteDataSet()), new NullRegisterData()));
                 return;
             }
-            
-            
+
+
             var bufferChannel = bufferChannelList[0];
 
             await bufferChannel!.Writer.WriteAsync(
@@ -98,18 +99,20 @@ public class
                     taskSet), new NullRegisterData()));
         } else {
             List<(List<Channel<(IServiceData, ISubjectData, IRegisterData)>>, IServiceData)> allList = [];
-            int count = 0;
+            var count = 0;
             foreach (var (key, value) in processorData) {
                 var channelList = register.Execute(reg => reg.Value.GetTypeChannel(key));
-                allList.Add((channelList,value));
+                allList.Add((channelList, value));
                 count += channelList.Count;
             }
 
             if (register.Execute(reference => reference.Value.ServiceTypes.Count) == 0) {
-                var channelList = register.Execute(reg => reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
+                var channelList = register.Execute(reg =>
+                    reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
                 if (channelList.Count == 0) {
                     return;
                 }
+
                 var channel = channelList[0];
                 await channel.Writer.WriteAsync(
                     (new NullServiceData(), new SubjectData(
@@ -119,8 +122,8 @@ public class
                 return;
             }
 
-            int j = 0;
-            foreach (var (channelList,value) in allList) {
+            var j = 0;
+            foreach (var (channelList, value) in allList) {
                 for (var i = 0; i < channelList.Count; ++i) {
                     var channel = channelList[i];
                     await channel.Writer.WriteAsync(

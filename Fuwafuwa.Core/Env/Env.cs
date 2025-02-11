@@ -47,7 +47,6 @@ public class Env {
             RunTask(taskAgentContainer)
         ];
 
-        
 
         _group.RegisterAndBroadcast(subjectBufferContainer).Wait();
         _group.RegisterAndBroadcast(taskAgentContainer).Wait();
@@ -59,7 +58,7 @@ public class Env {
     public int ConcurrencyLevel { get; init; }
 
     public List<(Type serviceType, bool isRegister)> GetServiceStatus() {
-        return _customContainers.Select(kvp => (kvp.Key,kvp.Value.isRegisted)).ToList();
+        return _customContainers.Select(kvp => (kvp.Key, kvp.Value.isRegisted)).ToList();
     }
 
     private Task RunTask(IRegistrableContainer container) {
@@ -137,14 +136,15 @@ public class Env {
 
         return (serviceType, inputHandler);
     }
-    
-    
+
+
     public async Task<(Type, InputHandler<TInputData>)> CreateRunRegisterPollingInput<TInputCore, TInputData,
         TSharedData, TInitData>(TInitData initData)
         where TInputCore : IInputCore<TSharedData, TInitData>, new()
         where TInitData : new()
         where TSharedData : ISharedDataWrapper {
-        var (serviceType, inputHandler) = CreateRunPollingInput<TInputCore, TInputData, TSharedData, TInitData>(initData);
+        var (serviceType, inputHandler) =
+            CreateRunPollingInput<TInputCore, TInputData, TSharedData, TInitData>(initData);
         await Register(serviceType);
         return (serviceType, inputHandler);
     }
@@ -162,7 +162,7 @@ public class Env {
         var serviceType = Run(processorContainer);
         return serviceType;
     }
-    
+
     public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
         TInitData initData)
         where TServiceData : IProcessorData
@@ -185,7 +185,7 @@ public class Env {
         var serviceType = Run(executorContainer);
         return serviceType;
     }
-    
+
     public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(
         TInitData initData)
         where TServiceData : AExecutorData

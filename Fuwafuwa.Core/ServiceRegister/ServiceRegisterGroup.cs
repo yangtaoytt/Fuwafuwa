@@ -251,6 +251,6 @@ public class ServiceRegisterGroup {
     public List<Channel<(IServiceData, ISubjectData, IRegisterData)>> GetTypeChannel(Type type) {
         lock (_registerLock) {
             return _originalRegister.GetTypeChannel(type);
-        }   
+        }
     }
 }

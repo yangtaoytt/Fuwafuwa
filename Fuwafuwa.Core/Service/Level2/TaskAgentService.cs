@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
@@ -42,7 +41,7 @@ public class TaskAgentService : AServiceWithRegister<TaskAgentCore, TaskAgentDat
             if (channelList.Count == 0) {
                 continue;
             }
-            
+
             var channel = channelList[0];
 
             foreach (var executorData in taskList) {

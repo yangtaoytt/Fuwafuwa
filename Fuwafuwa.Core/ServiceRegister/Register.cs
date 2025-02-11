@@ -9,6 +9,7 @@ namespace Fuwafuwa.Core.ServiceRegister;
 
 public class Register {
     public readonly ServiceRegisterGroup ServiceRegisterGroup;
+
     public Register(ServiceRegisterGroup serviceRegisterGroup) {
         ServiceTypes = new ConcurrentDictionary<(Type, Type), Channel<(IServiceData, ISubjectData, IRegisterData)>>();
         ServiceRegisterGroup = serviceRegisterGroup;
