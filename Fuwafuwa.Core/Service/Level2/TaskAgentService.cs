@@ -39,7 +39,10 @@ public class TaskAgentService : AServiceWithRegister<TaskAgentCore, TaskAgentDat
         foreach (var (type, taskList) in tasks) {
             var channelList = register.Execute(reg => reg.Value.GetTypeChannel(type));
 
-            Debug.Assert(channelList.Count == 1);
+            if (channelList.Count == 0) {
+                continue;
+            }
+            
             var channel = channelList[0];
 
             foreach (var executorData in taskList) {

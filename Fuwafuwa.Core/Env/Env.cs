@@ -27,19 +27,19 @@ public class Env {
     public Env(int concurrencyLevel, Logger2Event? logger = null) {
         ConcurrencyLevel = concurrencyLevel;
         _logger = logger;
-
+        _group = new ServiceRegisterGroup(_logger);
         _cancelSource = new CancellationTokenSource();
 
         var subjectBufferContainer = new SubjectBufferContainer(concurrencyLevel,
             () => new HashDistributor<NullServiceData, SubjectData, (SimpleSharedDataWrapper<Register>,
                 NullSharedDataWrapper<object>)>(),
-            (new SimpleSharedDataWrapper<Register>(new Register()), new object())
+            (new SimpleSharedDataWrapper<Register>(new Register(_group)), new object())
             , _logger);
 
         var taskAgentContainer = new TaskAgentContainer(ConcurrencyLevel,
             () => new PollingDistributor<TaskAgentData, NullSubjectData, (SimpleSharedDataWrapper<Register>,
                 NullSharedDataWrapper<object>)>(),
-            (new SimpleSharedDataWrapper<Register>(new Register()), new object())
+            (new SimpleSharedDataWrapper<Register>(new Register(_group)), new object())
             , _logger);
 
         _defaultServiceTask = [
@@ -47,7 +47,7 @@ public class Env {
             RunTask(taskAgentContainer)
         ];
 
-        _group = new ServiceRegisterGroup(_logger);
+        
 
         _group.RegisterAndBroadcast(subjectBufferContainer).Wait();
         _group.RegisterAndBroadcast(taskAgentContainer).Wait();
@@ -72,7 +72,7 @@ public class Env {
                 });
     }
 
-    public Type Run(IRegistrableContainer container) {
+    private Type Run(IRegistrableContainer container) {
         var serviceType = container.ServiceAttributeType.serviceType;
         var task = RunTask(container);
         _customContainers.Add(serviceType, (container, task, false));
@@ -87,14 +87,6 @@ public class Env {
 
         _customContainers[serviceType] = (container, task, true);
         await _group.RegisterAndBroadcast(container);
-    }
-
-    public async Task<Type> RunRegister(IRegistrableContainer container) {
-        var res = Run(container);
-
-        await Register(container.ServiceAttributeType.serviceType);
-
-        return res;
     }
 
     // be careful, sometimes if you stop a service and then write to input, but immediately restart it,
@@ -129,7 +121,7 @@ public class Env {
     }
 
 
-    public async Task<(Type, InputHandler<TInputData>)> CreateRunRegisterPollingInput<TInputCore, TInputData,
+    public (Type, InputHandler<TInputData>) CreateRunPollingInput<TInputCore, TInputData,
         TSharedData, TInitData>(TInitData initData)
         where TInputCore : IInputCore<TSharedData, TInitData>, new()
         where TInitData : new()
@@ -140,14 +132,24 @@ public class Env {
             ConcurrencyLevel,
             () => new PollingDistributor<InputPackagedData, NullSubjectData, (SimpleSharedDataWrapper<Register>,
                 TSharedData)>(),
-            inputHandler, (new SimpleSharedDataWrapper<Register>(new Register()), new TInitData()), _logger);
-        var serviceType = await RunRegister(inputContainer);
+            inputHandler, (new SimpleSharedDataWrapper<Register>(new Register(_group)), new TInitData()), _logger);
+        var serviceType = Run(inputContainer);
 
         return (serviceType, inputHandler);
     }
+    
+    
+    public async Task<(Type, InputHandler<TInputData>)> CreateRunRegisterPollingInput<TInputCore, TInputData,
+        TSharedData, TInitData>(TInitData initData)
+        where TInputCore : IInputCore<TSharedData, TInitData>, new()
+        where TInitData : new()
+        where TSharedData : ISharedDataWrapper {
+        var (serviceType, inputHandler) = CreateRunPollingInput<TInputCore, TInputData, TSharedData, TInitData>(initData);
+        await Register(serviceType);
+        return (serviceType, inputHandler);
+    }
 
-
-    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
+    public Type CreateRunPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
         TInitData initData)
         where TServiceData : IProcessorData
         where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new()
@@ -156,13 +158,22 @@ public class Env {
             ConcurrencyLevel,
             () => new PollingDistributor<TServiceData, SubjectDataWithCommand, (SimpleSharedDataWrapper<Register>,
                 TSharedData)>(),
-            (new SimpleSharedDataWrapper<Register>(new Register()), initData), _logger);
-        var serviceType = await RunRegister(processorContainer);
-
+            (new SimpleSharedDataWrapper<Register>(new Register(_group)), initData), _logger);
+        var serviceType = Run(processorContainer);
+        return serviceType;
+    }
+    
+    public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
+        TInitData initData)
+        where TServiceData : IProcessorData
+        where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new()
+        where TSharedData : ISharedDataWrapper {
+        var serviceType = CreateRunPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(initData);
+        await Register(serviceType);
         return serviceType;
     }
 
-    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(
+    public Type CreateRunPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(
         TInitData initData)
         where TServiceData : AExecutorData
         where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new()
@@ -171,7 +182,17 @@ public class Env {
             ConcurrencyLevel,
             () => new PollingDistributor<TServiceData, NullSubjectData, ValueTuple<TSharedData>>(), initData,
             _logger);
-        var serviceType = await RunRegister(executorContainer);
+        var serviceType = Run(executorContainer);
+        return serviceType;
+    }
+    
+    public async Task<Type> CreateRunRegisterPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(
+        TInitData initData)
+        where TServiceData : AExecutorData
+        where TExecutorCore : IExecutorCore<TServiceData, TSharedData, TInitData>, new()
+        where TSharedData : ISharedDataWrapper {
+        var serviceType = CreateRunPollingExecutor<TExecutorCore, TServiceData, TSharedData, TInitData>(initData);
+        await Register(serviceType);
         return serviceType;
     }
 }

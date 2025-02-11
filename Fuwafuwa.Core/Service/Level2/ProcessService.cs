@@ -1,12 +1,15 @@
 using System.Diagnostics;
+using System.Threading.Channels;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level0;
 using Fuwafuwa.Core.Attributes.ServiceAttribute.Level1;
 using Fuwafuwa.Core.Data.ExecuteDataSet;
+using Fuwafuwa.Core.Data.RegisterData.Level0;
 using Fuwafuwa.Core.Data.RegisterData.Level1;
 using Fuwafuwa.Core.Data.ServiceData.Level0;
 using Fuwafuwa.Core.Data.ServiceData.Level1;
 using Fuwafuwa.Core.Data.SharedDataWrapper.Level0;
 using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
+using Fuwafuwa.Core.Data.SubjectData.Level0;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Log;
@@ -70,7 +73,22 @@ public class
         if (processorData.Count == 0) {
             var bufferChannelList =
                 register.Execute(reg => reg.Value.GetTypeChannel(typeof(ISubjectBufferAttribute)));
-            Debug.Assert(bufferChannelList.Count == 1);
+            
+            if (register.Execute(reference => reference.Value.ServiceTypes.Count) == 0) {
+                var channelList = register.Execute(reg => reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
+                if (channelList.Count == 0) {
+                    return;
+                }
+                var channel = channelList[0];
+                await channel.Writer.WriteAsync(
+                    (new NullServiceData(), new SubjectData(
+                        subjectDataWithCommand, subjectDataWithCommand.Index4Child,
+                        subjectDataWithCommand.SiblingCount4Child, subjectDataWithCommand.Subject,
+                        new ExecuteDataSet()), new NullRegisterData()));
+                return;
+            }
+            
+            
             var bufferChannel = bufferChannelList[0];
 
             await bufferChannel!.Writer.WriteAsync(
@@ -79,16 +97,37 @@ public class
                     subjectDataWithCommand.SiblingCount4Child, subjectDataWithCommand.Subject,
                     taskSet), new NullRegisterData()));
         } else {
+            List<(List<Channel<(IServiceData, ISubjectData, IRegisterData)>>, IServiceData)> allList = [];
+            int count = 0;
             foreach (var (key, value) in processorData) {
                 var channelList = register.Execute(reg => reg.Value.GetTypeChannel(key));
+                allList.Add((channelList,value));
+                count += channelList.Count;
+            }
 
+            if (register.Execute(reference => reference.Value.ServiceTypes.Count) == 0) {
+                var channelList = register.Execute(reg => reg.Value.ServiceRegisterGroup.GetTypeChannel(typeof(ISubjectBufferAttribute)));
+                if (channelList.Count == 0) {
+                    return;
+                }
+                var channel = channelList[0];
+                await channel.Writer.WriteAsync(
+                    (new NullServiceData(), new SubjectData(
+                        subjectDataWithCommand, subjectDataWithCommand.Index4Child,
+                        subjectDataWithCommand.SiblingCount4Child, subjectDataWithCommand.Subject,
+                        new ExecuteDataSet()), new NullRegisterData()));
+                return;
+            }
+
+            int j = 0;
+            foreach (var (channelList,value) in allList) {
                 for (var i = 0; i < channelList.Count; ++i) {
                     var channel = channelList[i];
                     await channel.Writer.WriteAsync(
                         (value, new SubjectDataWithCommand(
                             subjectDataWithCommand, subjectDataWithCommand.Index4Child,
                             subjectDataWithCommand.SiblingCount4Child, subjectDataWithCommand.Subject, taskSet,
-                            i, channelList.Count
+                            j++, count
                         ), new NullRegisterData()));
                 }
             }

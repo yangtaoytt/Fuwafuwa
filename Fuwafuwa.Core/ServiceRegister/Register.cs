@@ -8,14 +8,17 @@ using Fuwafuwa.Core.Utils;
 namespace Fuwafuwa.Core.ServiceRegister;
 
 public class Register {
-    public Register() {
+    public readonly ServiceRegisterGroup ServiceRegisterGroup;
+    public Register(ServiceRegisterGroup serviceRegisterGroup) {
         ServiceTypes = new ConcurrentDictionary<(Type, Type), Channel<(IServiceData, ISubjectData, IRegisterData)>>();
+        ServiceRegisterGroup = serviceRegisterGroup;
     }
 
     public Register(Register other) {
         ServiceTypes =
             new ConcurrentDictionary<(Type, Type), Channel<(IServiceData, ISubjectData, IRegisterData)>>(
                 other.ServiceTypes);
+        ServiceRegisterGroup = other.ServiceRegisterGroup;
     }
 
     public ConcurrentDictionary<(Type attributeType, Type serviceType),

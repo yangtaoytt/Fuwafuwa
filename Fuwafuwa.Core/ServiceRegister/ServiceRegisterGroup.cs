@@ -42,7 +42,7 @@ public class ServiceRegisterGroup {
 
     public ServiceRegisterGroup(Logger2Event? logger) {
         _logger = logger;
-        _originalRegister = new Register();
+        _originalRegister = new Register(this);
         _service2Unregister = [];
         _service2Register = [];
         _service2Init = [];
@@ -232,7 +232,7 @@ public class ServiceRegisterGroup {
         _logger?.Debug(this, $"Before wait for {unRegisterType.serviceType.Name}");
         await task;
         _logger?.Debug(this, $"After wait for {unRegisterType.serviceType.Name}");
-        WaitInitComplete(unRegisterType, registerChannel, new Register());
+        WaitInitComplete(unRegisterType, registerChannel, new Register(this));
         foreach (var (registerType, (list, completionSource)) in _service2Register) {
             if (list.Keys.Contains(unRegisterType)) {
                 _logger?.Debug(this, $"Manually send add msg to {registerType.serviceType.Name}");
@@ -246,5 +246,11 @@ public class ServiceRegisterGroup {
                 UnregisterConfirm(unRegisterType, registerType);
             }
         }
+    }
+
+    public List<Channel<(IServiceData, ISubjectData, IRegisterData)>> GetTypeChannel(Type type) {
+        lock (_registerLock) {
+            return _originalRegister.GetTypeChannel(type);
+        }   
     }
 }
