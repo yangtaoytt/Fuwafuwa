@@ -5,6 +5,7 @@ using Fuwafuwa.Core.Data.SharedDataWrapper.Level2;
 using Fuwafuwa.Core.Data.SubjectData.Level1;
 using Fuwafuwa.Core.Data.SubjectData.Level2;
 using Fuwafuwa.Core.Distributor.Implement;
+using Fuwafuwa.Core.Distributor.Interface;
 using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.ServiceCore.Level3;
 using Fuwafuwa.Core.ServiceRegister;
@@ -149,18 +150,29 @@ public class Env {
         return (serviceType, inputHandler);
     }
 
+    public Type CreateRunProcessor<TProcessorCore, TServiceData, TDistributor, TSharedData, TInitData>(
+        TInitData initData)
+        where TServiceData : IProcessorData
+        where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new()
+        where TSharedData : ISharedDataWrapper
+        where TDistributor : IDistributor<TServiceData, SubjectDataWithCommand, (SimpleSharedDataWrapper<Register>,
+            TSharedData)>, new() {
+        var processorContainer = new ProcessorContainer<TProcessorCore, TServiceData, TSharedData, TInitData>(
+            ConcurrencyLevel,
+            () => new TDistributor(),
+            (new SimpleSharedDataWrapper<Register>(new Register(_group)), initData), _logger);
+        var serviceType = Run(processorContainer);
+        return serviceType;
+    }
+    
     public Type CreateRunPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
         TInitData initData)
         where TServiceData : IProcessorData
         where TProcessorCore : IProcessorCore<TServiceData, TSharedData, TInitData>, new()
         where TSharedData : ISharedDataWrapper {
-        var processorContainer = new ProcessorContainer<TProcessorCore, TServiceData, TSharedData, TInitData>(
-            ConcurrencyLevel,
-            () => new PollingDistributor<TServiceData, SubjectDataWithCommand, (SimpleSharedDataWrapper<Register>,
-                TSharedData)>(),
-            (new SimpleSharedDataWrapper<Register>(new Register(_group)), initData), _logger);
-        var serviceType = Run(processorContainer);
-        return serviceType;
+        return CreateRunProcessor<TProcessorCore, TServiceData, PollingDistributor<TServiceData, SubjectDataWithCommand,
+            (SimpleSharedDataWrapper<Register>,
+            TSharedData)>, TSharedData, TInitData>(initData);
     }
 
     public async Task<Type> CreateRunRegisterPollingProcessor<TProcessorCore, TServiceData, TSharedData, TInitData>(
