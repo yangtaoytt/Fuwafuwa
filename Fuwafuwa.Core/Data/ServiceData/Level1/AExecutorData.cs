@@ -22,6 +22,10 @@ public abstract class AExecutorData : IServiceData, IComparable<AExecutorData> {
             return 1;
         }
 
-        return Priority.CompareTo(other.Priority);
+        if (Priority != other.Priority) {
+            return Priority.CompareTo(other.Priority);
+        }
+        
+        return this.GetHashCode().CompareTo(other.GetHashCode());
     }
 }
