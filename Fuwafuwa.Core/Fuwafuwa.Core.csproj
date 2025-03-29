@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <Folder Include="Data\Collector\"/>
+        <Folder Include="New\" />
     </ItemGroup>
 
 </Project>
