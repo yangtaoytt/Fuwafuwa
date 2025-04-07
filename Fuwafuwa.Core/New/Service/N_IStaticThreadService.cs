@@ -6,7 +6,7 @@ namespace Fuwafuwa.Core.New.Serviece;
 abstract class N_IStaticThreadService<TService> : N_IService<TService> 
     where TService : N_IStaticThreadService<TService> {
     
-    private readonly Channel<N_IServiceData<TService>> _internalMainChannel;
+    private readonly Channel<N_IServiceData<TService,object>> _internalMainChannel;
     private readonly ushort _threadNumber;
     
     private Task _mainThreadTask;
@@ -18,10 +18,10 @@ abstract class N_IStaticThreadService<TService> : N_IService<TService>
     
     private N_DistributionData _distributionData;
     
-    private List<Channel<N_IServiceData<TService>>> _subThreadChannels;
+    private List<Channel<N_IServiceData<TService,object>>> _subThreadChannels;
     
     public N_IStaticThreadService(ushort threadNumber) {
-        _internalMainChannel = Channel.CreateUnbounded<N_IServiceData<TService>>();
+        _internalMainChannel = Channel.CreateUnbounded<N_IServiceData<TService,object>>();
         _threadNumber = threadNumber;
         
         _subThreadTasks = [];
@@ -42,7 +42,7 @@ abstract class N_IStaticThreadService<TService> : N_IService<TService>
     /// Will not shut down the service.</exception>
     /// <exception cref="ReceiveServiceDataException">Thrown when the writing to the channel fails.
     /// Will not shut down the service.</exception>
-    public void Receive(N_IServiceData<TService> serviceData) {
+    public void Receive(N_IServiceData<TService,object> serviceData) {
         if (!_hasStarted) {
             throw new ReceiveServiceDataBeforeStartException();
         }
@@ -71,7 +71,7 @@ abstract class N_IStaticThreadService<TService> : N_IService<TService>
         try {
             _mainThreadTask = RunMainThread(_cancellationTokenSource.Token);
             for (var i = 0; i < _threadNumber; ++i) {
-                var channel = Channel.CreateUnbounded<N_IServiceData<TService>>();
+                var channel = Channel.CreateUnbounded<N_IServiceData<TService,object>>();
                 _subThreadChannels.Add(channel);
                 _subThreadTasks.Add(RunSubThread(_cancellationTokenSource.Token, channel));
             }
@@ -99,11 +99,14 @@ abstract class N_IStaticThreadService<TService> : N_IService<TService>
                 }
                 
                 _distributionData.LastThreadId = threadIndex;
+                if (!_subThreadChannels[threadIndex].Writer.TryWrite(data)) {
+                    throw new ReceiveServiceDataException();
+                }
             }
         } catch (OperationCanceledException) { }
     }
     
-    private async Task RunSubThread(CancellationToken cancellationToken, Channel<N_IServiceData<TService>> channel) {
+    private async Task RunSubThread(CancellationToken cancellationToken, Channel<N_IServiceData<TService,object>> channel) {
         try {
             await foreach(var data in channel.Reader.ReadAllAsync(cancellationToken)) {
                 data.Accept(Implement());
