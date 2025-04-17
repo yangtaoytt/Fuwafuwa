@@ -1,4 +1,6 @@
 using System.Threading.Channels;
+using Fuwafuwa.Core.Log;
+using Fuwafuwa.Core.Log.LogEventArgs.Interface;
 using Fuwafuwa.Core.New.Data;
 
 namespace Fuwafuwa.Core.New.Serviece;
@@ -95,27 +97,39 @@ public abstract class AStaticThreadService<TService> : IService<TService>
     }
     
     private async Task RunMainThread(CancellationToken cancellationToken) {
-        try {
-            await foreach (var data in _internalMainChannel.Reader.ReadAllAsync(cancellationToken)) {
-                var threadIndex = data.Distribute(_distributionData);
-                if (threadIndex >= _threadNumber) {
-                    throw new ThreadIndexOutOfRangeException(threadIndex);
-                }
+        while (true) {
+            try {
+                await foreach (var data in _internalMainChannel.Reader.ReadAllAsync(cancellationToken)) {
+                    var threadIndex = data.Distribute(_distributionData);
+                    if (threadIndex >= _threadNumber) {
+                        throw new ThreadIndexOutOfRangeException(threadIndex);
+                    }
 
-                _distributionData.LastThreadId = threadIndex;
-                if (!_subThreadChannels[threadIndex].Writer.TryWrite(data)) {
-                    throw new ReceiveServiceDataException();
+                    _distributionData.LastThreadId = threadIndex;
+                    if (!_subThreadChannels[threadIndex].Writer.TryWrite(data)) {
+                        throw new ReceiveServiceDataException();
+                    }
                 }
+            } catch (OperationCanceledException) {
+                break;
+            } catch (Exception e) {
+                Logger2Event.Instance.Warning(this, $"Error:[{e.Message}] from *{e.Source}*.");
             }
-        } catch (OperationCanceledException) { }
+        }
     }
     
     private async Task RunSubThread(CancellationToken cancellationToken, Channel<IServiceData<TService,object>> channel) {
-        try {
-            await foreach(var data in channel.Reader.ReadAllAsync(cancellationToken)) {
-                data.Accept(Implement());
+        while (true) {
+            try {
+                await foreach (var data in channel.Reader.ReadAllAsync(cancellationToken)) {
+                    data.Accept(Implement());
+                }
+            } catch (OperationCanceledException) {
+                break;
+            }catch (Exception e) {
+                Logger2Event.Instance.Warning(this, $"Error:[{e.Message}] from *{e.Source}*.");
             }
-        } catch (OperationCanceledException) { }
+        }
     }
 
     protected virtual void Final() { }

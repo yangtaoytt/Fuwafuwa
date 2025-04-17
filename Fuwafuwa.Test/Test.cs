@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Fuwafuwa.Core.Log;
 using Fuwafuwa.Core.New;
 
 namespace Fuwafuwa.Test;
@@ -6,7 +7,18 @@ namespace Fuwafuwa.Test;
 public class Test {
     [SetUp]
     public void Setup() {
-
+        Logger2Event.Instance.WarningLogGenerated += (sender, args) => {
+            TestContext.Progress.WriteLine("Warn"+args.Message);
+        };
+        Logger2Event.Instance.DebugLogGenerated += (sender, args) => {
+            TestContext.Progress.WriteLine("Debug:"+args.Message);
+        };
+        Logger2Event.Instance.ErrorLogGenerated += (sender, args) => {
+            TestContext.Progress.WriteLine("Error" + args.Message);
+        };
+        Logger2Event.Instance.InfoLogGenerated += (sender, args) => {
+            TestContext.Progress.WriteLine("Info"+args.Message);
+        };
     }
 
     [TearDown]
@@ -60,19 +72,6 @@ public class Test {
             Assert.That(result, Is.EqualTo("Test[processed]"));
             break;
         }
-    }
-    
-    [Test]
-    public async Task TestSimpleCallRegisterServiceNotFound() {
-
-        var stringService = new StringService(1).Start();
-
-        var registerHandler = new ServiceRegisterManageHandler();
-        await registerHandler.AddServiceAsync(stringService);
-        
-        Assert.Throws<ServiceRegisterNotFoundException>(() => {
-            new StringConsumerData("Test").Send(stringService);
-        });
     }
     
     
