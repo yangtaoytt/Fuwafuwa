@@ -3,51 +3,54 @@ using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Handle;
 using Fuwafuwa.Core.Core.Service.Others.Distributor;
-using Fuwafuwa.Core.Core.Service.ServiceStrategry;
+using Fuwafuwa.Core.Core.Service.ServiceStrategy;
 
 namespace Fuwafuwa.Test.TestImplements;
 
 public class StringService : ServiceWithRegister<StringService>,
     IProcessorHandler<StringService, StringProcessorData, StringProcessorData>,
     ICustomerHandler<StringService, StringConsumerData> {
-    
     private readonly RegisterBuffer<WriteToTestChannelService> _writeToTestChannelService;
 
     public StringService(ushort threadNumber) : base(new StaticThreadStrategy<StringService>(threadNumber)) {
         _writeToTestChannelService = Register.CreateRegisterBuffer<WriteToTestChannelService>();
     }
+
     public StringService() : base(new DynamicThreadStrategy<StringService>()) {
         _writeToTestChannelService = Register.CreateRegisterBuffer<WriteToTestChannelService>();
-    }
-    public override StringService Implement() {
-        return this;
-    }
-
-    public StringProcessorData Handle(StringProcessorData data) {
-        return new StringProcessorData(data.StringData + "[processed]");
     }
 
     public void Handle(StringConsumerData data) {
         new WriteToTestChannelConsumerData(data.StringData + "[processed]").Send(_writeToTestChannelService
             .GetService()!);
     }
+
+    public StringProcessorData Handle(StringProcessorData data) {
+        return new StringProcessorData(data.StringData + "[processed]");
+    }
+
+    public override StringService Implement() {
+        return this;
+    }
 }
 
-public class StringProcessorData : AProcessorData<StringProcessorData,StringProcessorData,StringService> {
-    public string StringData { get; }
-    
+public class StringProcessorData : AProcessorData<StringProcessorData, StringProcessorData, StringService> {
     public StringProcessorData(string stringData) : base(new PollingDistributor()) {
         StringData = stringData;
     }
+
+    public string StringData { get; }
+
     public override StringProcessorData Implement() {
         return this;
     }
 }
 
-public class StringConsumerData : AConsumerData<StringConsumerData,StringService> {
+public class StringConsumerData : AConsumerData<StringConsumerData, StringService> {
     public StringConsumerData(string stringData) : base(new PollingDistributor()) {
         StringData = stringData;
     }
+
     public string StringData { get; }
 
 
