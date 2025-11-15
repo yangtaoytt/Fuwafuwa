@@ -127,5 +127,33 @@ public class Test {
         }
     }
     
+    [Test]
+    public async Task TestDynamicConcurrentCallRegisterService() {
+        
+        var channel = Channel.CreateUnbounded<string>();
+        var testChannelService = new WriteToTestChannelService(channel).Start();
+        var stringService = new StringService().Start();
+
+        var registerHandler = new ServiceRegisterManageHandler();
+        await registerHandler.AddServiceAsync(testChannelService);
+        await registerHandler.AddServiceAsync(stringService);
+        
+        
+        for (var i = 0;i < 100; i++) {
+            new StringConsumerData($"Test({i})" ).Send(stringService);
+        }
+
+        var resultSet = new HashSet<string>();
+        await foreach (var result in channel.Reader.ReadAllAsync()) {
+            resultSet.Add(result);
+            if (resultSet.Count == 100) {
+                break;
+            }
+        }
+        
+        for (var i = 0; i < 100; i++) {
+            Assert.That(resultSet.Contains($"Test({i})[processed]"), Is.True);
+        }
+    }
 
 }

@@ -3,6 +3,7 @@ using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Handle;
 using Fuwafuwa.Core.Core.Service.Others.Distributor;
+using Fuwafuwa.Core.Core.Service.ServiceStrategry;
 
 namespace Fuwafuwa.Test.TestImplements;
 
@@ -12,7 +13,10 @@ public class StringService : ServiceWithRegister<StringService>,
     
     private readonly RegisterBuffer<WriteToTestChannelService> _writeToTestChannelService;
 
-    public StringService(ushort threadNumber) : base(threadNumber) {
+    public StringService(ushort threadNumber) : base(new StaticThreadStrategy<StringService>(threadNumber)) {
+        _writeToTestChannelService = Register.CreateRegisterBuffer<WriteToTestChannelService>();
+    }
+    public StringService() : base(new DynamicThreadStrategy<StringService>()) {
         _writeToTestChannelService = Register.CreateRegisterBuffer<WriteToTestChannelService>();
     }
     public override StringService Implement() {

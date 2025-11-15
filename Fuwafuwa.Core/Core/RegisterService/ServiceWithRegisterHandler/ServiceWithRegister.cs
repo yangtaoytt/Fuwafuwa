@@ -2,6 +2,7 @@ using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Handle;
 using Fuwafuwa.Core.Core.Service.Others.Distributor;
 using Fuwafuwa.Core.Core.Service.Service;
+using Fuwafuwa.Core.Core.Service.ServiceStrategry;
 
 namespace Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 
@@ -11,14 +12,14 @@ namespace Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 /// </summary>
 /// <typeparam name="TService">The subclass of this class.</typeparam>
 public abstract class ServiceWithRegister<TService> : 
-    AStaticThreadService<TService>,
+    AStrategyService<TService>,
     IProcessorHandler<ServiceWithRegister<TService>, AddRegisterData<TService>, bool>, 
     IProcessorHandler<ServiceWithRegister<TService>, RemoveRegisterData<TService>, bool>,
     IProcessorHandler<ServiceWithRegister<TService>, InitRegisterData<TService>, bool>
     where TService : ServiceWithRegister<TService> {
     protected readonly Register.Register Register;
     
-    protected ServiceWithRegister(ushort threadNumber) : base(threadNumber) {
+    protected ServiceWithRegister(IServiceStrategy<TService> serviceStrategy) : base(serviceStrategy) {
         Register = new Register.Register();
     }
     

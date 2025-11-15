@@ -39,3 +39,7 @@ public class StartServiceFailedException : ServiceException {
 public class ThreadIndexOutOfRangeException : ServiceException {
     public ThreadIndexOutOfRangeException(ushort threadIndex) : base($"Thread index {threadIndex} is out of range.") {}
 }
+
+public class NoServiceException : ServiceException {
+    public NoServiceException() : base("No inner service available.") {}
+}
