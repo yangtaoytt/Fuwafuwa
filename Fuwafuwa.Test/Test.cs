@@ -170,13 +170,13 @@ public class Test {
     [Repeat(5)]
     public async Task TestStaticWithoutAsyncConcurrentCallRegisterService() {
         ushort threadNumber = 3;
-        int interval = 10;
+        var interval = 10;
 
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(channel,
             new StaticThreadWithoutAsyncStrategy<WriteToTestChannelService>(threadNumber, interval)).Start();
         var stringService = new StringService(
-            new StaticThreadWithoutAsyncStrategy<StringService>(threadNumber,interval)).Start();
+            new StaticThreadWithoutAsyncStrategy<StringService>(threadNumber, interval)).Start();
 
         var registerHandler = new ServiceRegisterManageHandler();
         await registerHandler.AddServiceAsync(testChannelService);
@@ -198,7 +198,7 @@ public class Test {
         for (var i = 0; i < 100; i++) {
             Assert.That(resultSet.Contains($"Test({i})[processed]"), Is.True);
         }
-        
+
         TestContext.Progress.WriteLine("Debug:test completed once.");
     }
 }

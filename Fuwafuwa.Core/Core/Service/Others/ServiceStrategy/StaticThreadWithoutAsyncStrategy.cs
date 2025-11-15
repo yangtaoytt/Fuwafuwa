@@ -11,13 +11,13 @@ namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 /// <typeparam name="TService">The corresponding Service Type.</typeparam>
 public class StaticThreadWithoutAsyncStrategy<TService> : AServiceStrategy<TService>
     where TService : AStrategyService<TService> {
-    private readonly int Interval = 1;
     private readonly DistributionData _distributionData;
     private readonly Channel<IServiceData<TService, object>> _internalMainChannel;
     private readonly List<Channel<IServiceData<TService, object>>> _subThreadChannels;
 
     private readonly List<bool> _subThreadRunning = [];
     private readonly ushort _threadNumber;
+    private readonly int _interval;
     private bool _isRunning;
 
     private bool _mainThreadRunning;
@@ -25,7 +25,7 @@ public class StaticThreadWithoutAsyncStrategy<TService> : AServiceStrategy<TServ
     public StaticThreadWithoutAsyncStrategy(ushort threadNumber, int interval) {
         _threadNumber = threadNumber;
 
-        Interval = interval;
+        _interval = interval;
 
         _internalMainChannel = Channel.CreateUnbounded<IServiceData<TService, object>>();
 
@@ -77,7 +77,7 @@ public class StaticThreadWithoutAsyncStrategy<TService> : AServiceStrategy<TServ
                 Logger2Event.Instance.Warning(this, $"Error:[{e.Message}] from *{e.Source}*.");
             }
 
-            Thread.Sleep(Interval);
+            Thread.Sleep(_interval);
         }
 
         _subThreadRunning[runningFlagIdx] = false;
@@ -108,7 +108,7 @@ public class StaticThreadWithoutAsyncStrategy<TService> : AServiceStrategy<TServ
                     $"StaticThreadWithoutAsyncStrategy<{typeof(TService).Name}> encountered an error while processing service data: \n{e}");
             }
 
-            Thread.Sleep(Interval);
+            Thread.Sleep(_interval);
         }
 
         _mainThreadRunning = false;
@@ -121,11 +121,11 @@ public class StaticThreadWithoutAsyncStrategy<TService> : AServiceStrategy<TServ
 
         _isRunning = false;
         while (_mainThreadRunning) {
-            Thread.Sleep(Interval);
+            Thread.Sleep(_interval);
         }
 
         while (_subThreadRunning.Contains(true)) {
-            Thread.Sleep(Interval);
+            Thread.Sleep(_interval);
         }
     }
 }
