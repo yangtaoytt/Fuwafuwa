@@ -46,3 +46,7 @@ public class ThreadIndexOutOfRangeException : ServiceException {
 public class NoServiceException : ServiceException {
     public NoServiceException() : base("No inner service available.") { }
 }
+
+public class NoStartForStrategyException : ServiceException {
+    public NoStartForStrategyException() : base("The strategy does not start yet.") { }
+}

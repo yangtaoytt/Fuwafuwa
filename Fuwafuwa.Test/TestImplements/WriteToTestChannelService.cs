@@ -3,7 +3,7 @@ using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Handle;
 using Fuwafuwa.Core.Core.Service.Others.Distributor;
-using Fuwafuwa.Core.Core.Service.ServiceStrategy;
+using Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 
 namespace Fuwafuwa.Test.TestImplements;
 
@@ -13,6 +13,11 @@ internal class WriteToTestChannelService : ServiceWithRegister<WriteToTestChanne
 
     public WriteToTestChannelService(ushort threadNumber, Channel<string> channel) :
         base(new StaticThreadStrategy<WriteToTestChannelService>(threadNumber)) {
+        _channel = channel;
+    }
+
+    public WriteToTestChannelService(Channel<string> channel, IServiceStrategy<WriteToTestChannelService> strategy) :
+        base(strategy) {
         _channel = channel;
     }
 

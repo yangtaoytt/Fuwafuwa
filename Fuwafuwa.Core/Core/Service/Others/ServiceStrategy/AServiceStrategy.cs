@@ -1,8 +1,7 @@
 using Fuwafuwa.Core.Core.Service.Data;
-using Fuwafuwa.Core.Core.Service.Others;
 using Fuwafuwa.Core.Core.Service.Service;
 
-namespace Fuwafuwa.Core.Core.Service.ServiceStrategy;
+namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 
 /// <summary>
 ///     Handle the _belongService's lifecycle and data processing.

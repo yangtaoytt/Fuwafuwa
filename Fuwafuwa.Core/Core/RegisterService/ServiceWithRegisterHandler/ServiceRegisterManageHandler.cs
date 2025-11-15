@@ -28,7 +28,7 @@ public class ServiceRegisterManageHandler {
                 }
 
                 foreach (var (_, action) in _serviceAction) {
-                    action.addAction(serviceName, service);
+                    action.addAction(serviceName, service).Wait();
                 }
 
                 _serviceAction.Add(serviceName, (
@@ -43,7 +43,7 @@ public class ServiceRegisterManageHandler {
 
                 _register.AddService(serviceName, service);
                 var initServiceData = new InitRegisterData<TService>(_register.CopyRegisterServices());
-                initServiceData.Send(service);
+                initServiceData.Send(service).Wait();
             }
         });
     }
@@ -66,12 +66,12 @@ public class ServiceRegisterManageHandler {
                 _serviceAction.Remove(serviceName);
 
                 foreach (var (_, action) in _serviceAction) {
-                    action.removeAction(serviceName);
+                    action.removeAction(serviceName).Wait();
                 }
 
                 _register.RemoveService(serviceName);
                 var removeInitServiceData = new InitRegisterData<TService>(new Dictionary<string, IServiceReference>());
-                removeInitServiceData.Send(service);
+                removeInitServiceData.Send(service).Wait();
             }
         });
     }

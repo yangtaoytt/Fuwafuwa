@@ -1,7 +1,8 @@
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Service;
+using Fuwafuwa.Core.Logger;
 
-namespace Fuwafuwa.Core.Core.Service.ServiceStrategy;
+namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 
 /// <summary>
 ///     Uses dynamic threads to process incoming service data.
@@ -18,7 +19,14 @@ public class DynamicThreadStrategy<TService> : AServiceStrategy<TService>
 
     public override void Receive(IServiceData<TService, object> serviceData) {
         if (_isRunning) {
-            _tasks.Add(Task.Run(() => { WorkOnData(serviceData); }));
+            _tasks.Add(Task.Run(() => {
+                try {
+                    WorkOnData(serviceData);
+                } catch (Exception e) {
+                    Logger2Event.Instance.Error(this,
+                        $"DynamicThreadStrategy<{typeof(TService).Name}> encountered an error while processing service data: \n{e}");
+                }
+            }));
         }
     }
 

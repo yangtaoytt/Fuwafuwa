@@ -1,10 +1,9 @@
 using System.Threading.Channels;
 using Fuwafuwa.Core.Core.Service.Data;
-using Fuwafuwa.Core.Core.Service.Others;
 using Fuwafuwa.Core.Core.Service.Service;
 using Fuwafuwa.Core.Logger;
 
-namespace Fuwafuwa.Core.Core.Service.ServiceStrategy;
+namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 
 /// <summary>
 ///     Use a fixed number of threads to process service data.
@@ -15,14 +14,11 @@ public class StaticThreadStrategy<TService> : AServiceStrategy<TService>
     private readonly DistributionData _distributionData;
     private readonly Channel<IServiceData<TService, object>> _internalMainChannel;
     private readonly List<Channel<IServiceData<TService, object>>> _subThreadChannels;
-
     private readonly List<Task> _subThreadTasks;
-
-
     private readonly ushort _threadNumber;
-    private CancellationTokenSource _cancellationTokenSource;
+    private CancellationTokenSource? _cancellationTokenSource;
 
-    private Task _mainThreadTask;
+    private Task? _mainThreadTask;
 
     public StaticThreadStrategy(ushort threadNumber) {
         _threadNumber = threadNumber;
@@ -75,7 +71,8 @@ public class StaticThreadStrategy<TService> : AServiceStrategy<TService>
             } catch (OperationCanceledException) {
                 break;
             } catch (Exception e) {
-                Logger2Event.Instance.Warning(this, $"Error:[{e.Message}] from *{e.Source}*.");
+                Logger2Event.Instance.Error(this,
+                    $"StaticThreadStrategy<{typeof(TService).Name}> encountered an error while processing service data: \n{e}");
             }
         }
     }
@@ -107,6 +104,10 @@ public class StaticThreadStrategy<TService> : AServiceStrategy<TService>
     }
 
     public override void ShutDown() {
+        if (_cancellationTokenSource == null || _mainThreadTask == null) {
+            throw new NoStartForStrategyException();
+        }
+
         _cancellationTokenSource.Cancel();
         _mainThreadTask.Wait();
         Task.WaitAll(_subThreadTasks.ToArray());

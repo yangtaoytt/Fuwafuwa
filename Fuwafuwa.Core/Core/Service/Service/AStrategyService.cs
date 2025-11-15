@@ -1,6 +1,6 @@
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Others;
-using Fuwafuwa.Core.Core.Service.ServiceStrategy;
+using Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
 
 namespace Fuwafuwa.Core.Core.Service.Service;
 
