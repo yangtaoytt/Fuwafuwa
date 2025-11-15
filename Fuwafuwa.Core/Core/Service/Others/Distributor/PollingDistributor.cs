@@ -1,7 +1,8 @@
-using Fuwafuwa.Core.New.Serviece;
+namespace Fuwafuwa.Core.Core.Service.Others.Distributor;
 
-namespace Fuwafuwa.Core.Core.Service.Others;
-
+/// <summary>
+/// The distributor that distributes tasks in a polling manner.
+/// </summary>
 public class PollingDistributor : IDistributor {
     public ushort Distribute(DistributionData distributionData) {
         return (ushort)((distributionData.LastThreadId + 1) % distributionData.ThreadCount);

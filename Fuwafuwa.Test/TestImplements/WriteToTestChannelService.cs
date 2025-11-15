@@ -1,11 +1,12 @@
 using System.Threading.Channels;
-using Fuwafuwa.Core.Core.Service.Others;
-using Fuwafuwa.Core.New.Data;
-using Fuwafuwa.Core.New.Serviece;
+using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
+using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Handle;
+using Fuwafuwa.Core.Core.Service.Others.Distributor;
 
-namespace Fuwafuwa.Core.New;
+namespace Fuwafuwa.Test.TestImplements;
 
-class WriteToTestChannelService : ServiceWithRegister<WriteToTestChannelService>, N_ICustomerHandler<WriteToTestChannelService, WriteToTestChannelConsumerData> {
+internal class WriteToTestChannelService : ServiceWithRegister<WriteToTestChannelService>, ICustomerHandler<WriteToTestChannelService, WriteToTestChannelConsumerData> {
     public override WriteToTestChannelService Implement() {
         return this;
     }
@@ -20,7 +21,7 @@ class WriteToTestChannelService : ServiceWithRegister<WriteToTestChannelService>
     }
 }
 
-class WriteToTestChannelConsumerData : AConsumerData<WriteToTestChannelConsumerData,WriteToTestChannelService> {
+internal class WriteToTestChannelConsumerData : AConsumerData<WriteToTestChannelConsumerData,WriteToTestChannelService> {
     
     public string Data { get; }
     public WriteToTestChannelConsumerData(string data) : base(new PollingDistributor()) {

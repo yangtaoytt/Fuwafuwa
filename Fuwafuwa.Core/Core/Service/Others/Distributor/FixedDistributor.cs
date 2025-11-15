@@ -1,7 +1,8 @@
-using Fuwafuwa.Core.New.Serviece;
+namespace Fuwafuwa.Core.Core.Service.Others.Distributor;
 
-namespace Fuwafuwa.Core.Core.Service.Others;
-
+/// <summary>
+/// The distributor that always distributes to the fixed thread (thread 0).
+/// </summary>
 class FixedDistributor : IDistributor {
     public ushort Distribute(DistributionData distributionData) {
         return 0;

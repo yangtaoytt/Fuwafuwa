@@ -1,20 +1,25 @@
-using Fuwafuwa.Core.Core.Service.Others;
-using Fuwafuwa.Core.New.Data;
-using Fuwafuwa.Core.New.Serviece;
+using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Handle;
+using Fuwafuwa.Core.Core.Service.Others.Distributor;
+using Fuwafuwa.Core.Core.Service.Service;
 
-namespace Fuwafuwa.Core.New;
+namespace Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 
+/// <summary>
+/// The base class for services that support registration functionality.
+/// This class provides methods to add, remove, and initialize registered services.
+/// </summary>
+/// <typeparam name="TService">The subclass of this class.</typeparam>
 public abstract class ServiceWithRegister<TService> : 
     AStaticThreadService<TService>,
-    N_IProcessorHandler<ServiceWithRegister<TService>, AddRegisterData<TService>, bool>, 
-    N_IProcessorHandler<ServiceWithRegister<TService>, RemoveRegisterData<TService>, bool>,
-    N_IProcessorHandler<ServiceWithRegister<TService>, InitRegisterData<TService>, bool>
+    IProcessorHandler<ServiceWithRegister<TService>, AddRegisterData<TService>, bool>, 
+    IProcessorHandler<ServiceWithRegister<TService>, RemoveRegisterData<TService>, bool>,
+    IProcessorHandler<ServiceWithRegister<TService>, InitRegisterData<TService>, bool>
     where TService : ServiceWithRegister<TService> {
-    protected readonly Register Register;
-
-
+    protected readonly Register.Register Register;
+    
     protected ServiceWithRegister(ushort threadNumber) : base(threadNumber) {
-        Register = new Register();
+        Register = new Register.Register();
     }
     
     public bool Handle(AddRegisterData<TService> data) {
@@ -33,6 +38,10 @@ public abstract class ServiceWithRegister<TService> :
     }
 }
 
+/// <summary>
+/// The data structure for initializing registered services.
+/// </summary>
+/// <typeparam name="TService">The service with register.</typeparam>
 public class InitRegisterData<TService> : AProcessorData<InitRegisterData<TService>, bool, ServiceWithRegister<TService> >
     where TService : ServiceWithRegister<TService> {
     public readonly Dictionary<string, IServiceReference> Services;
@@ -40,11 +49,15 @@ public class InitRegisterData<TService> : AProcessorData<InitRegisterData<TServi
     public InitRegisterData(Dictionary<string, IServiceReference> services) : base(new PollingDistributor()) {
         Services = services;
     }
-    public override  InitRegisterData<TService> Implement() {
+    public override InitRegisterData<TService> Implement() {
         return this;
     }
 }
 
+/// <summary>
+/// The data structure for adding a registered service.
+/// </summary>
+/// <typeparam name="TService">The service with register.</typeparam>
 public class AddRegisterData<TService> : AProcessorData<AddRegisterData<TService>,bool,ServiceWithRegister<TService>> 
     where TService : ServiceWithRegister<TService> {
     public readonly string ServiceName;
@@ -60,6 +73,10 @@ public class AddRegisterData<TService> : AProcessorData<AddRegisterData<TService
     }
 }
 
+/// <summary>
+/// The data structure for removing a registered service.
+/// </summary>
+/// <typeparam name="TService">The service with register.</typeparam>
 public class RemoveRegisterData<TService>: AProcessorData<RemoveRegisterData<TService>, bool, ServiceWithRegister<TService>> 
     where TService : ServiceWithRegister<TService> {
     public readonly string ServiceName;

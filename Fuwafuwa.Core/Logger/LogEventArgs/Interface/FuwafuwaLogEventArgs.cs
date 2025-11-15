@@ -1,5 +1,8 @@
-namespace Fuwafuwa.Core.Log.LogEventArgs.Interface;
+namespace Fuwafuwa.Core.Logger.LogEventArgs.Interface;
 
+/// <summary>
+/// The event arguments for fuwafuwa log events.
+/// </summary>
 public class FuwafuwaLogEventArgs : EventArgs {
     public FuwafuwaLogEventArgs(string message) {
         Message = message;

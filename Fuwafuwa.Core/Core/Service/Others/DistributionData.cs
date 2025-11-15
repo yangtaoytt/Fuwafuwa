@@ -1,7 +1,10 @@
-namespace Fuwafuwa.Core.New.Serviece;
+namespace Fuwafuwa.Core.Core.Service.Others;
 
+/// <summary>
+/// The data structure for thread distribution information.
+/// </summary>
 public class DistributionData {
-    public ushort ThreadCount;
+    public readonly ushort ThreadCount;
     public ushort LastThreadId;
     public DistributionData(ushort lastThreadId, ushort threadCount) {
         this.LastThreadId = lastThreadId;

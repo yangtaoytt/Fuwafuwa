@@ -1,10 +1,19 @@
 using System.Threading.Channels;
-using Fuwafuwa.Core.Log;
-using Fuwafuwa.Core.Log.LogEventArgs.Interface;
-using Fuwafuwa.Core.New.Data;
+using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Others;
+using Fuwafuwa.Core.Logger;
 
-namespace Fuwafuwa.Core.New.Serviece;
+namespace Fuwafuwa.Core.Core.Service.Service;
 
+/// <summary>
+/// The abstract class for services with static number of threads.
+/// The number of threads is defined when constructing the service.
+/// The service will create the threads when started.
+/// And each thread will have its own channel to receive the service data.
+/// The main thread will distribute the data to each sub thread according to the distribution logic defined in the service data.
+/// The service data will be processed in the sub threads.
+/// </summary>
+/// <typeparam name="TService">The subclass of this class.</typeparam>
 public abstract class AStaticThreadService<TService> : IService<TService> 
     where TService : AStaticThreadService<TService> {
     
@@ -34,15 +43,7 @@ public abstract class AStaticThreadService<TService> : IService<TService>
         
         _subThreadChannels = [];
     }
-
-    /// <summary>
-    /// Receives the service data.
-    /// </summary>
-    /// <param name="serviceData">The data which is belonged to this service.</param>
-    /// <exception cref="ReceiveServiceDataBeforeStartException">Thrown when the method is called before the service starts.
-    /// Will not shut down the service.</exception>
-    /// <exception cref="ReceiveServiceDataException">Thrown when the writing to the channel fails.
-    /// Will not shut down the service.</exception>
+    
     public void Receive(IServiceData<TService,object> serviceData) {
         if (!_hasStarted) {
             throw new ReceiveServiceDataBeforeStartException();
@@ -55,14 +56,6 @@ public abstract class AStaticThreadService<TService> : IService<TService>
         throw new ReceiveServiceDataException();
     }
     
-
-    /// <summary>
-    /// Start the service, both of sub thread and main thread of service.
-    /// </summary>
-    /// <exception cref="StartServiceRepeatedlyException">Thrown when start a started service.
-    /// Will not shut down the service.</exception>
-    /// <exception cref="StartServiceFailedException">Thrown when start fails cause of inner exception.
-    /// Will shut down the service.</exception>
     public TService Start() {
         if (_hasStarted) {
             throw new StartServiceRepeatedlyException();
@@ -86,10 +79,7 @@ public abstract class AStaticThreadService<TService> : IService<TService>
     }
 
     public abstract TService Implement();
-
-    /// <summary>
-    /// Shut down the service by cancel the token source and wait for all tasks to complete.
-    /// </summary>
+    
     public void ShutDown() {
         _cancellationTokenSource.Cancel();
         _mainThreadTask.Wait();

@@ -1,7 +1,8 @@
-using Fuwafuwa.Core.New.Serviece;
+namespace Fuwafuwa.Core.Core.Service.Others.Distributor;
 
-namespace Fuwafuwa.Core.Core.Service.Others;
-
+/// <summary>
+/// The interface for thread distributors.
+/// </summary>
 public interface IDistributor {
     ushort Distribute(DistributionData distributionData);
 }

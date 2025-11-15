@@ -1,6 +1,7 @@
 using System.Threading.Channels;
-using Fuwafuwa.Core.Log;
-using Fuwafuwa.Core.New;
+using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
+using Fuwafuwa.Core.Logger;
+using Fuwafuwa.Test.TestImplements;
 
 namespace Fuwafuwa.Test;
 
@@ -8,16 +9,16 @@ public class Test {
     [SetUp]
     public void Setup() {
         Logger2Event.Instance.WarningLogGenerated += (sender, args) => {
-            TestContext.Progress.WriteLine("Warn"+args.Message);
+            TestContext.Progress.WriteLine("Warn:"+args.Message);
         };
         Logger2Event.Instance.DebugLogGenerated += (sender, args) => {
             TestContext.Progress.WriteLine("Debug:"+args.Message);
         };
         Logger2Event.Instance.ErrorLogGenerated += (sender, args) => {
-            TestContext.Progress.WriteLine("Error" + args.Message);
+            TestContext.Progress.WriteLine("Error:" + args.Message);
         };
         Logger2Event.Instance.InfoLogGenerated += (sender, args) => {
-            TestContext.Progress.WriteLine("Info"+args.Message);
+            TestContext.Progress.WriteLine("Info:"+args.Message);
         };
     }
 

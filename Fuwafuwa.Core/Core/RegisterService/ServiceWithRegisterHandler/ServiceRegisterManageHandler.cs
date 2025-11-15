@@ -1,16 +1,25 @@
-using Fuwafuwa.Core.New.Data;
-using Fuwafuwa.Core.New.Serviece;
+using Fuwafuwa.Core.Core.RegisterService.Others;
+using Fuwafuwa.Core.Core.Service.Service;
 
-namespace Fuwafuwa.Core.New;
+namespace Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 
+/// <summary>
+/// The handler that manages service registration and notifies services of changes.
+/// </summary>
 public class ServiceRegisterManageHandler {
     private delegate Task AddAction(string serviceName, IServiceReference service);
     private delegate Task RemoveAction(string serviceName);
     
     private readonly Lock _lock = new();
     private readonly Dictionary<string, (AddAction addAction,RemoveAction removeAction)> _serviceAction = new();
-    private readonly Register _register = new();
+    private readonly Register.Register _register = new();
 
+    /// <summary>
+    /// The method to add a service and notify all registered services.
+    /// </summary>
+    /// <param name="service">The service to add.</param>
+    /// <typeparam name="TService">The service type.</typeparam>
+    /// <returns>The task of the async progress.</returns>
     public Task AddServiceAsync<TService>(ServiceWithRegister<TService> service)
         where TService : ServiceWithRegister<TService> {
         var serviceName = typeof(TService).Name;
@@ -42,6 +51,12 @@ public class ServiceRegisterManageHandler {
         });
     }
     
+    /// <summary>
+    /// The method to remove a service and notify all registered services.
+    /// </summary>
+    /// <param name="service">The service to remove.</param>
+    /// <typeparam name="TService">The type of service.</typeparam>
+    /// <returns>The task of the async progress.</returns>
     public Task RemoveServiceAsync<TService>(ServiceWithRegister<TService> service)
         where TService : ServiceWithRegister<TService> {
         var serviceName = typeof(TService).Name;

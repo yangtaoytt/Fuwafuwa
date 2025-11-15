@@ -1,14 +1,16 @@
-using Fuwafuwa.Core.Core.Service.Others;
-using Fuwafuwa.Core.New.Data;
-using Fuwafuwa.Core.New.Serviece;
+using Fuwafuwa.Core.Core.RegisterService.Register;
+using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
+using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Handle;
+using Fuwafuwa.Core.Core.Service.Others.Distributor;
 
-namespace Fuwafuwa.Core.New;
+namespace Fuwafuwa.Test.TestImplements;
 
 public class StringService : ServiceWithRegister<StringService>,
-    N_IProcessorHandler<StringService, StringProcessorData, StringProcessorData>,
-    N_ICustomerHandler<StringService, StringConsumerData> {
+    IProcessorHandler<StringService, StringProcessorData, StringProcessorData>,
+    ICustomerHandler<StringService, StringConsumerData> {
     
-    private RegisterBuffer<WriteToTestChannelService> _writeToTestChannelService;
+    private readonly RegisterBuffer<WriteToTestChannelService> _writeToTestChannelService;
 
     public StringService(ushort threadNumber) : base(threadNumber) {
         _writeToTestChannelService = Register.CreateRegisterBuffer<WriteToTestChannelService>();
