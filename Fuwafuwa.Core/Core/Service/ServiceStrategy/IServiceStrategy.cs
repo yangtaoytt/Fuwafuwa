@@ -1,7 +1,7 @@
 using Fuwafuwa.Core.Core.Service.Data;
 using Fuwafuwa.Core.Core.Service.Service;
 
-namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
+namespace Fuwafuwa.Core.Core.Service.ServiceStrategy;
 
 /// <summary>
 ///     The interface for service strategies.
@@ -27,7 +27,13 @@ public interface IServiceStrategy<TService> where TService : AStrategyService<TS
     /// </summary>
     void ShutDown();
 
+    /// <summary>
+    ///     Stop accepting new tasks and wait for all running tasks to complete.
+    /// </summary>
     void WaitForCompletion();
-    
+
+    /// <summary>
+    ///     Resume accepting new tasks.
+    /// </summary>
     void Resume();
 }

@@ -23,12 +23,25 @@ public interface IService<out TService> : IServiceReference
     ///     Start the service.
     ///     Should be called before using the service.
     /// </summary>
+    /// <returns>The subclass instance reference.</returns>
     TService Start();
 
     /// <summary>
     ///     Shut down the service and wait for all tasks to complete.
     /// </summary>
     void ShutDown();
+
+    /// <summary>
+    ///     Stop accepting new tasks and wait for all running tasks to complete.
+    /// </summary>
+    /// <returns>The subclass instance reference.</returns>
+    TService WaitForCompletion();
+
+    /// <summary>
+    ///     Resume accepting new tasks.
+    /// </summary>
+    /// <returns>The subclass instance reference.</returns>
+    TService Resume();
 
     /// <summary>
     ///     Get the subclass instance reference.
@@ -38,8 +51,4 @@ public interface IService<out TService> : IServiceReference
     /// </summary>
     /// <returns>The subclass instance reference.</returns>
     TService Implement();
-    
-    TService WaitForCompletion();
-    
-    TService Resume();
 }

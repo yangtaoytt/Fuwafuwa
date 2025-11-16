@@ -1,5 +1,5 @@
+using Fuwafuwa.Core.Core.Service.Distributor;
 using Fuwafuwa.Core.Core.Service.Handle;
-using Fuwafuwa.Core.Core.Service.Others.Distributor;
 using Fuwafuwa.Core.Core.Service.Service;
 
 namespace Fuwafuwa.Core.Core.Service.Data;
@@ -27,7 +27,7 @@ public abstract class AProcessorData<TServiceData, TResult, TService> :
             result = service.Handle(Implement());
         } catch (Exception e) {
             _taskSource.TrySetException(e);
-            return;
+            throw;
         }
 
         _taskSource.TrySetResult(result);

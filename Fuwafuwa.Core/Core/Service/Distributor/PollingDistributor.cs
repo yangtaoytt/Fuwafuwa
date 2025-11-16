@@ -1,4 +1,6 @@
-namespace Fuwafuwa.Core.Core.Service.Others.Distributor;
+using Fuwafuwa.Core.Core.Service.Others;
+
+namespace Fuwafuwa.Core.Core.Service.Distributor;
 
 /// <summary>
 ///     The distributor that distributes tasks in a polling manner.

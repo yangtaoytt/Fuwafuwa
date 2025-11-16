@@ -1,31 +1,36 @@
 using System.Threading.Channels;
 using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Others;
 using Fuwafuwa.Core.Core.Service.Service;
 using Fuwafuwa.Core.Logger;
 
-namespace Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
+namespace Fuwafuwa.Core.Core.Service.ServiceStrategy.ThreadSafeServiceStrategy;
 
-public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TService>
-    where TService : AStrategyService<TService>{
-    private int _interval;
-    
-     private readonly ushort _threadNumber;
-    private DistributionData? _distributionData;
-    
-    private Channel<IServiceData<TService, object>>? _internalMainChannel;
+/// <summary>
+///     A service strategy that distributes incoming service data to a fixed number of threads without using async/await.
+/// </summary>
+/// <typeparam name="TService">The corresponding Service Type.</typeparam>
+public class StaticThreadWithoutAsyncStrategy<TService> : AThreadSafeServiceStrategy<TService>
+    where TService : AStrategyService<TService> {
+    private readonly int _interval;
     private readonly List<Channel<IServiceData<TService, object>>?> _subThreadChannels;
-    
+    private readonly List<bool> _subThreadRunning;
+
+    private readonly ushort _threadNumber;
+    private DistributionData? _distributionData;
+
+    private Channel<IServiceData<TService, object>>? _internalMainChannel;
+
     private bool _isMainShouldRun;
     private bool _isSubThreadShouldRun;
     private bool _mainThreadRunning;
-    private readonly List<bool> _subThreadRunning;
 
     public StaticThreadWithoutAsyncStrategy(ushort threadNumber, int interval) {
         _interval = interval;
         _threadNumber = threadNumber;
         _subThreadChannels = [];
         _subThreadRunning = [];
-        for(int i = 0; i < threadNumber; ++i) {
+        for (var i = 0; i < threadNumber; ++i) {
             _subThreadChannels.Add(null);
             _subThreadRunning.Add(false);
         }
@@ -34,7 +39,7 @@ public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TSer
         _isSubThreadShouldRun = false;
         _internalMainChannel = null;
         _mainThreadRunning = false;
-        
+
         _distributionData = new DistributionData(0, threadNumber);
     }
 
@@ -42,7 +47,9 @@ public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TSer
         if (_internalMainChannel!.Writer.TryWrite(serviceData)) {
             return;
         }
-        throw new Exception("Failed to write service data to main channel.");
+
+        throw new AddData2ChannelException(typeof(TService), serviceData.GetType(),
+            "Failed to write service data to main channel.");
     }
 
     protected override void WaitForCompletionInternal() {
@@ -51,22 +58,23 @@ public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TSer
         while (_mainThreadRunning) {
             Thread.Sleep(_interval);
         }
+
         _subThreadChannels.ForEach(channel => channel!.Writer.Complete());
         _isSubThreadShouldRun = false;
         while (_subThreadRunning.Contains(true)) {
             Thread.Sleep(_interval);
         }
-        
+
         _isMainShouldRun = false;
         _internalMainChannel = null;
         _mainThreadRunning = false;
-        
+
         _isSubThreadShouldRun = false;
         for (var i = 0; i < _threadNumber; ++i) {
             _subThreadChannels[i] = null;
             _subThreadRunning[i] = false;
         }
-        
+
         _distributionData = null;
     }
 
@@ -77,25 +85,31 @@ public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TSer
             var channel = Channel.CreateUnbounded<IServiceData<TService, object>>();
             _subThreadChannels[i] = channel;
             var idx = i;
-            Task.Run(() => { RunSubThread(idx,channel); });
+            Task.Run(() => { RunSubThread(idx); });
         }
+
         _internalMainChannel = Channel.CreateUnbounded<IServiceData<TService, object>>();
         _isMainShouldRun = true;
         Task.Run(RunMainThread);
     }
+
+    /// <summary>
+    ///     The main thread that distributes incoming service data to sub-threads.
+    /// </summary>
     private void RunMainThread() {
-        _mainThreadRunning = true;
         try {
+            _mainThreadRunning = true;
             while (_isMainShouldRun) {
                 if (_internalMainChannel!.Reader.TryRead(out var data)) {
-                    var threadIndex = data!.Distribute(_distributionData!);
+                    var threadIndex = data.Distribute(_distributionData!);
                     if (threadIndex >= _threadNumber) {
-                        throw new ThreadIndexOutOfRangeException(threadIndex);
+                        throw new DistributionDataException(typeof(TService), data.GetType(),
+                            $"Thread index[{threadIndex}] out of range.");
                     }
 
                     _distributionData!.LastThreadId = threadIndex;
                     if (!_subThreadChannels[threadIndex]!.Writer.TryWrite(data)) {
-                        throw new ReceiveServiceDataException();
+                        throw new AddData2ChannelException(typeof(TService), data.GetType());
                     }
                 }
 
@@ -103,37 +117,47 @@ public class StaticThreadWithoutAsyncStrategy <TService> : AServiceStrategy<TSer
             }
 
             while (_internalMainChannel!.Reader.TryRead(out var data)) {
-                var threadIndex = data!.Distribute(_distributionData!);
+                var threadIndex = data.Distribute(_distributionData!);
                 if (threadIndex >= _threadNumber) {
-                    throw new ThreadIndexOutOfRangeException(threadIndex);
+                    throw new DistributionDataException(typeof(TService), data.GetType(),
+                        $"Thread index[{threadIndex}] out of range.");
                 }
 
                 _distributionData!.LastThreadId = threadIndex;
                 if (!_subThreadChannels[threadIndex]!.Writer.TryWrite(data)) {
-                    throw new ReceiveServiceDataException();
+                    throw new AddData2ChannelException(typeof(TService), data.GetType());
                 }
             }
+
+            _mainThreadRunning = false;
         } catch (Exception e) {
-            Logger2Event.Instance.Warning(this, $"Error:[{e.Message}] from *{e.Source}*.");
+            Logger2Event.Instance.Error(this,
+                "Error processing service data in StaticThreadWithoutAsyncStrategy: " + e);
         }
-        _mainThreadRunning = false;
     }
-    private void RunSubThread(int idx, Channel<IServiceData<TService, object>> channel) {
+
+    /// <summary>
+    ///     The sub-thread that processes service data.
+    /// </summary>
+    /// <param name="idx">The sub thread's corresponding id.</param>
+    private void RunSubThread(int idx) {
         try {
             _subThreadRunning[idx] = true;
             while (_isSubThreadShouldRun) {
                 if (_subThreadChannels[idx]!.Reader.TryRead(out var data)) {
-                    WorkOnData(data!);
+                    WorkOnData(data);
                 }
+
                 Thread.Sleep(_interval);
             }
+
             while (_subThreadChannels[idx]!.Reader.TryRead(out var data)) {
-                WorkOnData(data!);
+                WorkOnData(data);
             }
+
             _subThreadRunning[idx] = false;
-        }catch (Exception e) {
-            Logger2Event.Instance.Error(this,
-                $"StaticThreadStrategy<{typeof(TService).Name}> encountered an error while processing service data: \n{e}");
+        } catch (Exception e) {
+            Logger2Event.Instance.Error(this, "Error processing service data in DynamicThreadStrategy: " + e);
         }
     }
 }

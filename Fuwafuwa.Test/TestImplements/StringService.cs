@@ -1,9 +1,10 @@
 using Fuwafuwa.Core.Core.RegisterService.Register;
 using Fuwafuwa.Core.Core.RegisterService.ServiceWithRegisterHandler;
 using Fuwafuwa.Core.Core.Service.Data;
+using Fuwafuwa.Core.Core.Service.Distributor;
 using Fuwafuwa.Core.Core.Service.Handle;
-using Fuwafuwa.Core.Core.Service.Others.Distributor;
-using Fuwafuwa.Core.Core.Service.Others.ServiceStrategy;
+using Fuwafuwa.Core.Core.Service.ServiceStrategy;
+using Fuwafuwa.Core.Core.Service.ServiceStrategy.ThreadSafeServiceStrategy;
 
 namespace Fuwafuwa.Test.TestImplements;
 
@@ -27,9 +28,8 @@ public class StringService : ServiceWithRegister<StringService>,
     public void Handle(StringConsumerData data) {
         _writeToTestChannelService.Execute(service => {
             if (service != null) {
-                new WriteToTestChannelConsumerData(data.StringData + "[processed]").Send(service!);
+                new WriteToTestChannelConsumerData(data.StringData + "[processed]").Send(service);
             }
-            
         });
     }
 

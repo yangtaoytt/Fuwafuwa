@@ -1,5 +1,5 @@
+using Fuwafuwa.Core.Core.Service.Distributor;
 using Fuwafuwa.Core.Core.Service.Handle;
-using Fuwafuwa.Core.Core.Service.Others.Distributor;
 using Fuwafuwa.Core.Core.Service.Service;
 
 namespace Fuwafuwa.Core.Core.Service.Data;
