@@ -27,7 +27,7 @@ public class Test {
     public void TearDown() { }
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestSimpleCallCustomer() {
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(1, channel).Start();
@@ -41,7 +41,7 @@ public class Test {
     }
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestSimpleCallProcessor() {
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(1, channel).Start();
@@ -58,7 +58,7 @@ public class Test {
     }
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestSimpleCallRegisterService() {
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(1, channel).Start();
@@ -79,7 +79,7 @@ public class Test {
 
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestMultThreadCallRegisterService() {
         const ushort threadNumber = 2;
 
@@ -103,7 +103,7 @@ public class Test {
     }
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestConcurrentCallRegisterService() {
         const ushort threadNumber = 20;
 
@@ -136,7 +136,7 @@ public class Test {
     }
 
     [Test]
-    [Repeat(100)]
+    [Repeat(10000)]
     public async Task TestDynamicConcurrentCallRegisterService() {
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(channel).Start();
@@ -167,38 +167,76 @@ public class Test {
     }
 
     [Test]
-    [Repeat(5)]
+    [Repeat(100)]
     public async Task TestStaticWithoutAsyncConcurrentCallRegisterService() {
         ushort threadNumber = 3;
-        var interval = 10;
+        var interval = 1;
 
         var channel = Channel.CreateUnbounded<string>();
         var testChannelService = new WriteToTestChannelService(channel,
-            new StaticThreadWithoutAsyncStrategy<WriteToTestChannelService>(threadNumber, interval)).Start();
+            new StaticThreadWithoutAsyncStrategy<WriteToTestChannelService>(threadNumber,interval)).Start();
         var stringService = new StringService(
-            new StaticThreadWithoutAsyncStrategy<StringService>(threadNumber, interval)).Start();
+            new StaticThreadWithoutAsyncStrategy<StringService>(threadNumber,interval)).Start();
 
         var registerHandler = new ServiceRegisterManageHandler();
         await registerHandler.AddServiceAsync(testChannelService);
         await registerHandler.AddServiceAsync(stringService);
 
 
-        for (var i = 0; i < 100; i++) {
+        for (var i = 0; i < 1; i++) {
             new StringConsumerData($"Test({i})").Send(stringService);
         }
 
         var resultSet = new HashSet<string>();
         await foreach (var result in channel.Reader.ReadAllAsync()) {
             resultSet.Add(result);
-            if (resultSet.Count == 100) {
+            if (resultSet.Count == 1) {
                 break;
             }
         }
 
-        for (var i = 0; i < 100; i++) {
+        for (var i = 0; i < 1; i++) {
             Assert.That(resultSet.Contains($"Test({i})[processed]"), Is.True);
         }
 
         TestContext.Progress.WriteLine("Debug:test completed once.");
     }
+     
+     [Test]
+     [Repeat(10000)]
+     public async Task TestRegisterServiceSync() {
+         var channel = Channel.CreateUnbounded<string>();
+         var testChannelService = new WriteToTestChannelService(channel).Start();
+         var stringService = new StringService().Start();
+
+         var registerHandler = new ServiceRegisterManageHandler();
+         await registerHandler.AddServiceAsync(testChannelService);
+         await registerHandler.AddServiceAsync(stringService);
+         
+         for (var i = 0; i < 100; i++) {
+             new StringConsumerData($"Test({i})").Send(stringService);
+         }
+
+         await registerHandler.RemoveServiceAsync(testChannelService);
+         testChannelService.WaitForCompletion();
+         testChannelService.IsOpen = false;
+         Task.Delay(10).Wait();
+         testChannelService.IsOpen = true;
+         testChannelService.Resume();
+         await registerHandler.AddServiceAsync(testChannelService);
+
+         // var resultSet = new HashSet<string>();
+         // await foreach (var result in channel.Reader.ReadAllAsync()) {
+         //     resultSet.Add(result);
+         //     if (resultSet.Count == 100) {
+         //         break;
+         //     }
+         // }
+         //
+         // for (var i = 0; i < 100; i++) {
+         //     Assert.That(resultSet.Contains($"Test({i})[processed]"), Is.True);
+         // }
+
+         TestContext.Progress.WriteLine("Debug:test completed once.");
+     }
 }

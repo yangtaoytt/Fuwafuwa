@@ -25,8 +25,12 @@ public class StringService : ServiceWithRegister<StringService>,
     }
 
     public void Handle(StringConsumerData data) {
-        new WriteToTestChannelConsumerData(data.StringData + "[processed]").Send(_writeToTestChannelService
-            .GetService()!);
+        _writeToTestChannelService.Execute(service => {
+            if (service != null) {
+                new WriteToTestChannelConsumerData(data.StringData + "[processed]").Send(service!);
+            }
+            
+        });
     }
 
     public StringProcessorData Handle(StringProcessorData data) {

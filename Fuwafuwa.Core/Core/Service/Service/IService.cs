@@ -38,4 +38,8 @@ public interface IService<out TService> : IServiceReference
     /// </summary>
     /// <returns>The subclass instance reference.</returns>
     TService Implement();
+    
+    TService WaitForCompletion();
+    
+    TService Resume();
 }

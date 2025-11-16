@@ -11,6 +11,21 @@ internal class WriteToTestChannelService : ServiceWithRegister<WriteToTestChanne
     ICustomerHandler<WriteToTestChannelService, WriteToTestChannelConsumerData> {
     private readonly Channel<string> _channel;
 
+    private bool _isOpen = true;
+    private Lock _lock = new Lock();
+    public bool IsOpen {
+        set {
+            lock (_lock) {
+                _isOpen = value;
+            }
+        }
+        get {
+            lock (_lock) {
+                return _isOpen;
+            }
+        }
+    }
+
     public WriteToTestChannelService(ushort threadNumber, Channel<string> channel) :
         base(new StaticThreadStrategy<WriteToTestChannelService>(threadNumber)) {
         _channel = channel;
@@ -28,7 +43,9 @@ internal class WriteToTestChannelService : ServiceWithRegister<WriteToTestChanne
 
     public void Handle(WriteToTestChannelConsumerData data) {
         var result = data.Data;
-        _channel.Writer.TryWrite(result);
+        if (IsOpen) {
+            _channel.Writer.TryWrite(result);
+        }
     }
 
     public override WriteToTestChannelService Implement() {

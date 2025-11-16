@@ -43,6 +43,14 @@ public abstract class AStrategyService<TService> : IService<TService>
     }
 
     public abstract TService Implement();
+    public TService WaitForCompletion() {
+        _strategy.WaitForCompletion();
+        return Implement();
+    }
+    public TService Resume() {
+        _strategy.Resume();
+        return Implement();
+    }
 
     /// <summary>
     ///     Get called by the strategy to trigger the specific logic on the data.

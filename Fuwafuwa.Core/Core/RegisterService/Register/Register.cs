@@ -108,10 +108,12 @@ public class Register {
     /// <returns>The service.</returns>
     private TService? SearchService<TService>(string serviceName)
         where TService : class, IService<TService> {
-        if (_registerServices.TryGetValue(serviceName, out var service)) {
-            return (TService)service;
-        }
+        lock (_lock) {
+            if (_registerServices.TryGetValue(serviceName, out var service)) {
+                return (TService)service;
+            }
 
-        return null;
+            return null;
+        }
     }
 }

@@ -1,3 +1,4 @@
+using Fuwafuwa.Core.Core.RegisterService.Others;
 using Fuwafuwa.Core.Core.Service.Service;
 
 namespace Fuwafuwa.Core.Core.RegisterService.Register;
@@ -20,12 +21,10 @@ internal interface IRegisterBuffer {
 /// <typeparam name="TService">The specific service type.</typeparam>
 public class RegisterBuffer<TService> : IRegisterBuffer
     where TService : class, IService<TService> {
-    private readonly Lock _lock;
-    private TService? _service;
+    private readonly AsyncSharedDataWrapper<Ref<TService?>> _service;
 
     public RegisterBuffer(TService? service) {
-        _service = service;
-        _lock = new Lock();
+        _service = new AsyncSharedDataWrapper<Ref<TService?>>(new Ref<TService?>(service));
     }
 
     /// <summary>
@@ -33,33 +32,66 @@ public class RegisterBuffer<TService> : IRegisterBuffer
     ///     This method is called by the register when a service is added or removed.
     ///     User should not call this method directly.
     /// </summary>
-    /// <param name="service"></param>
+    /// <param name="service">The new service.</param>
     public void ResetService(IServiceReference? service) {
         if (service == null) {
-            ResetTService(null);
+            ResetTService(null).Wait();
             return;
         }
 
         if (service.GetType().Name == typeof(TService).Name) {
-            ResetTService((TService)service);
-        }
-    }
-
-    private void ResetTService(TService? service) {
-        lock (_lock) {
-            _service = service;
+            ResetTService((TService)service).Wait();
         }
     }
 
     /// <summary>
-    ///     Gets the service from the buffer.
-    ///     This method is thread-safe.
-    ///     If the service is not available, it returns null.
+    ///     The method to reset the service reference.
     /// </summary>
-    /// <returns>The service</returns>
-    public TService? GetService() {
-        lock (_lock) {
-            return _service;
-        }
+    /// <param name="service">New Service.</param>
+    private async Task ResetTService(TService? service) {
+        await _service.ExecuteAsync(serviceRef => {
+            serviceRef.Value = service;
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>
+    ///     The method to execute an async action with the service.
+    /// </summary>
+    /// <param name="asyncAction">The action on service.</param>
+    public async Task ExecuteAsync(Func<TService?, Task> asyncAction) {
+        await _service.ExecuteAsync(serviceRef => Task.FromResult(asyncAction.Invoke(serviceRef.Value)));
+    }
+
+    /// <summary>
+    ///     The method to execute an async function with the service.
+    /// </summary>
+    /// <param name="asyncFunc">The action on service.</param>
+    /// <typeparam name="TResult">The return Type in Task.</typeparam>
+    /// <returns>The result of action.</returns>
+    public async Task<TResult> ExecuteAsync<TResult>(Func<TService?, Task<TResult>> asyncFunc) {
+        return await _service.ExecuteAsync(serviceRef => asyncFunc.Invoke(serviceRef.Value));
+    }
+
+    /// <summary>
+    ///     The method to execute a synchronous action with the service.
+    /// </summary>
+    /// <param name="action">The action on service.</param>
+    public void Execute(Action<TService?> action) {
+        _service.ExecuteAsync(serviceRef => {
+                action.Invoke(serviceRef.Value);
+                return Task.CompletedTask;
+            })
+            .Wait();
+    }
+
+    /// <summary>
+    ///     The method to execute a synchronous function with the service.
+    /// </summary>
+    /// <param name="func">The action on service.</param>
+    /// <typeparam name="TResult">The return type.</typeparam>
+    /// <returns>The result of action.</returns>
+    public TResult Execute<TResult>(Func<TService?, TResult> func) {
+        return _service.ExecuteAsync(serviceRef => Task.FromResult(func.Invoke(serviceRef.Value))).Result;
     }
 }

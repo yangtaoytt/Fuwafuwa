@@ -50,3 +50,7 @@ public class NoServiceException : ServiceException {
 public class NoStartForStrategyException : ServiceException {
     public NoStartForStrategyException() : base("The strategy does not start yet.") { }
 }
+
+public class ServiceAlreadyStopOrShutDownException : ServiceException {
+    public ServiceAlreadyStopOrShutDownException(object caller) : base($"The service {caller}({caller.GetType()}) has already been stopped or shut down.") { }
+}

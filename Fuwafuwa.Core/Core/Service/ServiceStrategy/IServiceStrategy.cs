@@ -26,4 +26,8 @@ public interface IServiceStrategy<TService> where TService : AStrategyService<TS
     ///     Shut down the threads.
     /// </summary>
     void ShutDown();
+
+    void WaitForCompletion();
+    
+    void Resume();
 }
